@@ -1,776 +1,2068 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
+<!-- INSTRUÇÃO: NÃO REMOVER OU LIMPAR TAGS DUPLICADAS/REPETIDAS NESTE CÓDIGO -->
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encanto Festas - Reserva VIP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Encanto Festas - Locação de Brinquedos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-page: #ffffff;
-            --strong-blue: #2563eb;
-            --success-green: #16a34a;
+            --primary-blue: #003399; /* Azul Royal Profundo */
+            --accent-yellow: #FFD700; /* Amarelo Ouro */
+            --light-bg: #F8FAFC;
+            --text-main: #1E293B;
         }
 
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: var(--bg-page);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-main);
             overflow-x: hidden;
-            color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Contentor Principal */
-        .glass-container {
-            background: #ffffff; 
-            border-radius: 3rem;
+        .rounded-card { border-radius: 20px; }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px; 
             width: 100%;
-            max-width: 480px;
-            padding: 1.5rem;
-            position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
-            border: 1px solid #f1f5f9;
-            min-height: 450px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Ecrã de Carregamento */
-        #loadingScreen {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
-            transition: opacity 0.5s ease;
-        }
-
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid #f1f5f9;
-            border-top: 4px solid var(--strong-blue);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .loading-text {
-            font-size: 0.75rem;
-            font-weight: 800;
-            color: var(--strong-blue);
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-        /* UI do Calendário */
-        #calendarUI {
-            display: none;
-            opacity: 0;
-            transition: opacity 0.6s ease;
-        }
-
-        .calendar-header {
-            background: #ffffff; 
-            border-radius: 2rem;
-            padding: 1rem 1.2rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid #f1f5f9;
-            display: flex;
-            align-items: center;
-        }
-
-        #monthYear {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: var(--strong-blue);
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-            flex: 1;
-            text-align: center;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+            will-change: transform, opacity;
         }
 
         .day-cell {
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 1/1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-radius: 1.25rem;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 12px;
+            font-size: clamp(0.7rem, 3.5vw, 0.95rem); /* Fonte adaptável ao tamanho da tela */
+            font-weight: 700;
             position: relative;
-            font-weight: 800;
-            font-size: 1rem;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-            border: 2px solid transparent;
-            color: white;
+            transition: background 0.2s;
+            background: white;
+            border: 1px solid #E2E8F0;
+            min-width: 0; /* Evita que a célula quebre o grid em telas muito pequenas */
+        }
+
+        /* Removida a escala ao clicar no dia de hoje ou outros dias ativos conforme pedido */
+        .day-cell.active:active { transform: none; }
+        
+        /* Borda estática para o dia de hoje, sem animação */
+        .today-anim {
+            border: 3px solid #003399 !important;
+            box-shadow: 0 0 10px rgba(0, 51, 153, 0.2);
+        }
+
+        .price-indicator {
+            font-size: clamp(0.4rem, 2vw, 0.55rem);
+            font-weight: 500; 
+            margin-top: 1px;
             line-height: 1;
         }
 
-        .day-cell .price-symbol {
-            font-size: 0.5rem;
-            font-weight: 700;
-            margin-top: 2px;
-            opacity: 0.85;
-        }
-
-        .day-cell:not(.is-past):not(.empty):hover {
-            transform: scale(1.1) translateY(-4px);
-            z-index: 10;
-            border-color: var(--strong-blue);
-        }
-
-        .today { 
-            border: 3px solid var(--strong-blue) !important; 
-        }
-
-        .is-past {
-            background: #f8fafc !important;
-            pointer-events: none;
-            filter: grayscale(1);
-            color: #94a3b8 !important;
-            opacity: 0.7;
-            box-shadow: none;
-        }
-
-        /* Modal do Catálogo */
-        #popupModal {
-            display: none;
+        .bottom-sheet {
             position: fixed;
-            inset: 0;
-            z-index: 100;
-            align-items: flex-end; 
-            justify-content: center;
-        }
-
-        @media (min-width: 640px) { #popupModal { align-items: center; padding: 1.5rem; } }
-
-        #modalOverlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-        }
-
-        #modalContent {
-            position: relative;
-            background: #ffffff; 
-            width: 100%;
-            max-width: 500px;
-            border-radius: 2.5rem 2.5rem 0 0;
-            max-height: 92vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            z-index: 50;
+            border-radius: 32px 32px 0 0;
             transform: translateY(100%);
-            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-            overflow: hidden;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.08);
+            /* Permitir scroll interno no mobile, drag so no grabber */
+            touch-action: pan-y; 
         }
 
-        #popupModal.active #modalContent { transform: translateY(0) scale(1); }
+        .bottom-sheet.open { transform: translateY(0); }
 
-        .modal-banner {
-            background: #ffffff;
-            padding: 1.5rem 1.5rem 1rem 1.5rem;
-            text-align: left;
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 51, 153, 0.2);
+            z-index: 40;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+
+        .availability-bar-container {
             position: relative;
-            border-bottom: 1px solid #f1f5f9;
+            padding-top: 8px;
         }
 
-        #modalTitle {
-            color: var(--strong-blue);
-            font-size: 0.875rem; 
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
-
-        #priceCategory {
-            font-size: 8.5px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 3px;
-            display: block;
+        .availability-bar {
+            height: 12px;
+            background: linear-gradient(90deg, #22C55E 0%, #EAB308 50%, #EF4444 100%);
+            border-radius: 20px;
+            position: relative;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .toy-card {
-            background: #ffffff;
-            border-radius: 1.5rem;
-            padding: 0.6rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            border: 1px solid #f1f5f9;
-            transition: all 0.2s;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.3s;
         }
+        
+        .toy-card:hover { transform: translateY(-2px); }
 
-        .toy-card.out-of-stock {
-            opacity: 0.45;
-            filter: grayscale(1);
-        }
-
-        .toy-img-box {
-            width: 75px;
-            height: 75px;
-            background: #f8fafc;
-            border-radius: 1rem;
-            overflow: hidden;
-            flex-shrink: 0;
-            border: 1px solid #f1f5f9;
-            position: relative;
+        .toy-card.disabled {
+            opacity: 0.35 !important;
+            filter: grayscale(1) !important;
+            pointer-events: none !important;
         }
 
         .age-badge {
             position: absolute;
-            bottom: 3px;
-            right: 3px;
-            width: 28px;
-            height: 28px;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 900;
+            bottom: 6px;
+            right: 6px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.6rem;
+            font-weight: 700;
             color: white;
+            z-index: 5;
         }
 
-        .age-L { background: #16a34a; } 
-        .age-6 { background: #ea580c; } 
-        .age-14 { background: #dc2626; } 
-
-        .qty-selector {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: #f8fafc;
-            padding: 0.3rem;
-            border-radius: 0.8rem;
-            border: 1px solid #e2e8f0;
-            margin-left: auto;
+        .img-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
         }
 
-        .qty-btn {
-            width: 28px;
-            height: 28px;
-            background: white;
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 16px;
-            color: #0f172a;
-            border: 1px solid #e2e8f0;
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
-        .qty-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        .btn-primary {
+            background-color: var(--accent-yellow);
+            color: var(--primary-blue);
+            font-weight: 700;
+            box-shadow: 0 4px 0 #D4AF37;
+            transition: all 0.1s;
+        }
+        
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #D4AF37;
+        }
 
-        .filter-chip {
-            padding: 6px 12px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
+        /* Botão secundário elegante para o Voltar */
+        .btn-secondary {
+            background-color: #F1F5F9;
+            color: #64748B;
+            font-weight: 700;
             transition: all 0.2s;
-            border: 1px solid #e2e8f0;
-            color: #64748b;
-            background: #ffffff;
+            border: 1px solid #E2E8F0;
+        }
+        .btn-secondary:active {
+            background-color: #E2E8F0;
+            transform: scale(0.95);
         }
 
-        .filter-chip.active {
-            background: var(--strong-blue);
-            color: white;
-            border-color: var(--strong-blue);
-        }
-
-        .price-card {
-            background: #ffffff;
-            border: 1px solid #f1f5f9;
-            border-radius: 1.5rem;
-            padding: 1rem 1.25rem;
-            margin: 0.5rem 1.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        .toggle-switch {
+            width: 38px;
+            height: 20px;
+            background: #CBD5E1;
+            border-radius: 20px;
             position: relative;
-            overflow: hidden;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.12);
+            flex-shrink: 0;
         }
-
-        .price-card::before {
-            content: '';
+        .toggle-switch.on { 
+            background: var(--primary-blue); 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+        }
+        .toggle-knob {
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
             position: absolute;
-            top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, #22c55e, #16a34a);
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-
-        .total-amount {
-            color: #16a34a;
-            font-size: 1.25rem;
-            font-weight: 900;
-            letter-spacing: -0.04em;
-        }
-
-        .availability-pill {
-            height: 10px;
-            border-radius: 12px;
-            background: linear-gradient(to right, #ef4444, #facc15, #22c55e);
-            position: relative;
-        }
-
-        #indicatorArrow {
-            position: absolute;
-            top: -14px;
-            width: 0; height: 0;
-            border-left: 7px solid transparent;
-            border-right: 7px solid transparent;
-            border-top: 10px solid #0f172a;
-            transition: left 0.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease;
-            transform: translateX(-50%);
-            opacity: 0;
+        .toggle-switch.on .toggle-knob { 
+            left: 21px; 
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .border-error { border: 2px solid #EF4444 !important; }
+        .border-success { border: 2px solid #22C55E !important; }
+
+        #cartToast {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #003399;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            width: fit-content;
+            white-space: nowrap;
+        }
+        #cartToast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #streetSuggestionsContainer {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-top: -12px;
+            margin-bottom: 16px;
+            border: 1px solid #F1F5F9;
+            overflow: hidden;
+            display: none;
+        }
+        .suggestion-item {
+            padding: 14px 20px;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid #F8FAFC;
+            cursor: pointer;
+        }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:active { background: #F1F5F9; }
+
+        .weekday-header {
+            text-align: center;
+            font-size: 10px;
+            font-weight: 800;
+            color: #94A3B8;
+            text-transform: uppercase;
+            padding-bottom: 8px;
+        }
+
+        /* Estilo para área de drag handle interativa */
+        .drag-handle-area {
+            cursor: grab;
+            user-select: none;
+            padding-top: 12px;
+            padding-bottom: 8px;
+            /* Trava o arraste do browser só aqui */
+            touch-action: none; 
+        }
+        .drag-handle-area:active {
+            cursor: grabbing;
+        }
+
+        /* Animação Promo 50% */
+        @keyframes float-promo {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        .promo-badge-anim {
+            animation: float-promo 2s infinite ease-in-out;
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+    </style>
+</head>
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- Configuração da cor da barra do browser (Chrome, Safari, Samsung Internet, etc) -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="msapplication-navbutton-color" content="#2563eb">
+
+    <title>Encanto Festas - Header</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-blue: #2563eb;
+            --deep-blue: #1e3a8a;
+            --marketing-gold: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            --marketing-glow: 0 0 20px rgba(245, 158, 11, 0.5);
+            --tooltip-bg: linear-gradient(165deg, #2563eb 0%, #1e40af 100%);
+        }
+
+        html, body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        h1, h2, h3, h4, .brand-font {
+            font-family: 'Baloo 2', cursive;
+            line-height: 1.2;
+        }
+        
+        .glass-header {
+            background: #2563eb; 
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .item-card {
+            transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+            animation: fadeIn 0.4s ease-out forwards;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            will-change: transform, opacity;
+            user-select: none;
+            touch-action: pan-y; 
+        }
+
+        /* Efeito Skeleton Loader */
+        .skeleton-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1.5rem;
+            height: 110px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .shimmer-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.05) 50%, 
+                transparent 100%);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes fadeIn {
+            from { transform: translateY(8px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .dismissing {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease !important;
+            transform: translateX(120%) !important;
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        .modal-view {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateY(100%);
+            background: linear-gradient(180deg, #2563eb 0%, #1e3a8a 100%);
+            background-attachment: fixed;
+            visibility: hidden;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+        }
+        .modal-view.active {
+            transform: translateY(0%);
+            visibility: visible;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Tooltip Premium v5 */
+        #marketingTooltip {
+            z-index: 100;
+            filter: drop-shadow(0 20px 45px rgba(0,0,0,0.5));
+            animation: elasticImpact 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+            max-width: calc(100vw - 12px);
+            background: var(--tooltip-bg);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            position: absolute;
+            box-shadow: inset 0 0 25px rgba(255, 255, 255, 0.1);
+            transform-origin: top right;
+        }
+
+        @keyframes elasticImpact {
+            0% { 
+                opacity: 0; 
+                transform: scale(0.2) translateY(-60px) rotate(15deg); 
+                filter: blur(15px);
+            }
+            70% {
+                transform: scale(1.05) translateY(5px) rotate(-2deg);
+            }
+            100% { 
+                opacity: 1; 
+                transform: scale(1) translateY(0) rotate(0deg);
+                filter: blur(0);
+            }
+        }
+
+        .tooltip-arrow {
+            position: absolute;
+            top: -10px;
+            right: 18px;
+            width: 24px;
+            height: 12px;
+            z-index: 10;
+        }
+        .tooltip-arrow svg {
+            fill: #2563eb; 
+        }
+
+        .novidade-badge {
+            background: var(--marketing-gold);
+            color: #1e3a8a;
+            box-shadow: var(--marketing-glow);
+            animation: pulse-gold 2s infinite;
+        }
+
+        @keyframes pulse-gold {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+        }
+
+        .month-divider {
+            position: sticky;
+            top: 0; 
+            z-index: 20;
+            background: #1e3a8a; 
+            margin: 0 -1rem 0.5rem -1rem;
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff !important; 
+            font-weight: 800;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .search-area {
+            background: #1e3a8a;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .date-badge {
+            background: var(--marketing-gold);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 3.5rem; 
+            height: 3.5rem;
+            border-radius: 1rem;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
 
-    <div id="popupModal">
-        <div id="modalOverlay"></div>
-        <div id="modalContent">
+    <div id="tooltipOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[45] hidden transition-opacity duration-300"></div>
+
+    <header id="mainHeader" class="fixed top-0 left-0 right-0 w-full glass-header z-[50] h-16">
+        <div class="max-w-xl mx-auto px-3 h-full flex justify-between items-center">
             
-            <div class="modal-banner">
-                <button id="closeModal" class="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-400 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-                <h3 id="modalTitle"></h3>
-                <span id="priceCategory"></span>
-            </div>
-
-            <!-- Filtros -->
-            <div class="px-6 py-4 bg-white border-b border-slate-50">
-                <div class="flex flex-col gap-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ordenar:</span>
-                        <div class="flex gap-2">
-                            <button onclick="updateSort('alpha')" id="sort-alpha" class="filter-chip active">A-Z</button>
-                            <button onclick="updateSort('relevance')" id="sort-relevance" class="filter-chip">Relevância</button>
-                            <button onclick="updateSort('age')" id="sort-age" class="filter-chip">Idade</button>
-                        </div>
+            <a href="index.html" class="flex items-center gap-2 active:scale-95 transition-transform outline-none text-decoration-none group">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdX7GkygoIKwK06MzeweiE0GPt5I1rsz808w&s" 
+                    class="w-10 h-10 rounded-full border-2 border-yellow-400 shadow-sm transition-transform group-hover:rotate-12"
+                    alt="Logo Encanto Festas">
+                
+                <div class="Bird inline-flex flex-col items-start leading-none -mt-1.5 ml-0.5">
+                    <div class="text-xl Bird font-bold brand-font tracking-tight">
+                        <span class="text-white">Encanto</span><span class="text-yellow-400">Festas</span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Filtrar:</span>
-                        <div class="flex gap-2">
-                            <button onclick="updateAgeFilter('all')" id="age-all" class="filter-chip active">Toda</button>
-                            <button onclick="updateAgeFilter('L')" id="age-L" class="filter-chip">L</button>
-                            <button onclick="updateAgeFilter('6')" id="age-6" class="filter-chip">6+</button>
-                            <button onclick="updateAgeFilter('14')" id="age-14" class="filter-chip">14+</button>
+                    <span class="Bird text-[7.2px] font-black text-white/90 uppercase -mt-0.5 tracking-[0.15em] w-full text-justify ml-[2px]" style="text-align-last: justify;">
+                        LOCAÇÃO DE BRINQUEDOS
+                    </span>
+                </div>
+            </a>
+            
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <button id="agendaBtn" class="p-2.5 Bird Bird bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all active:scale-90 flex items-center justify-center outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y2="6"/><line x1="8" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>
+                        </svg>
+                    </button>
+
+                    <div id="marketingTooltip" class="Bird absolute top-14 -right-1 w-72 rounded-[2rem] overflow-visible hidden flex flex-col">
+                        <div class="tooltip-arrow Bird">
+                            <svg viewBox="0 0 24 12" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 0L24 12H0L12 0Z"/>
+                            </svg>
+                        </div>
+                        
+                        <div class="p-7 Bird flex flex-col gap-4 relative z-20">
+                            <div class="flex justify-between items-center Bird">
+                                <div class="novidade-badge px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em]">
+                                    NOVIDADE
+                                </div>
+                                <span class="text-2xl drop-shadow-lg">🎉</span>
+                            </div>
+                            
+                            <div class="space-y-1.5 Bird">
+                                <h4 class="text-xl font-black text-white Bird leading-tight">
+                                    Painel de Agendamento
+                                </h4>
+                                <p class="text-[14px] text-blue-100 Bird leading-relaxed font-medium Bird">
+                                    Quer confirmar se a sua festa está agendada corretamente? Valide todos os itens e horários agora mesmo!
+                                </p>
+                            </div>
+
+                            <button id="closeMarketing" class="Bird mt-2 w-max px-5 py-2 bg-white text-[#1e3a8a] text-[10px] font-black rounded-xl active:scale-95 transition-all shadow-lg uppercase tracking-widest self-end border-b-2 border-blue-200">
+                                Entendido!
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="modalBody" class="p-6 space-y-3 overflow-y-auto flex-1 no-scrollbar bg-white"></div>
-
-            <div id="priceFooter" class="hidden">
-                <div class="price-card">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div id="discountNotice" class="hidden mb-1"></div>
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Total da Reserva</p>
-                        </div>
-                        <div class="text-right">
-                            <p id="originalPrice" class="text-[10px] text-slate-400 line-through hidden"></p>
-                            <p id="totalDisplay" class="total-amount">R$ 0,00</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="px-6 pb-8 pt-2 bg-white">
-                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-blue-100 active:scale-95 transition-all text-xs uppercase tracking-widest">
-                    RESERVAR AGORA
+                <button id="notifBtn" class="relative p-2.5 Bird bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all active:scale-90 flex items-center justify-center outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                    </svg>
+                    <span id="notifBadge" class="hidden absolute top-2 right-2 w-2.5 h-2.5 bg-yellow-400 rounded-full border-2 border-blue-600 animate-pulse"></span>
                 </button>
             </div>
+        </div>
+    </header>
+
+    <!-- MODAL DE NOTIFICAÇÕES -->
+    <div id="notifModal" class="modal-view hidden Bird flex flex-col">
+        <div class="px-5 py-3 Bird border-b border-white/10 flex justify-between items-center bg-blue-900/40 backdrop-blur-xl">
+            <div class="flex items-center gap-4 Bird">
+                <button id="closeNotif" class="Bird p-2 text-white/70 hover:text-white transition-colors bg-white/10 rounded-lg outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <h2 class="text-lg Bird font-bold brand-font text-white">Notificações</h2>
+            </div>
+            <button id="markAllRead" class="Bird text-[10px] font-bold uppercase tracking-widest text-blue-200 hover:text-white transition-colors outline-none">Limpar Tudo</button>
+        </div>
+        <div id="notifContainer" class="Bird flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-10"></div>
+    </div>
+
+    <!-- MODAL DE AGENDA -->
+    <div id="agendaModal" class="modal-view hidden Bird flex flex-col">
+        <div class="px-5 py-3 Bird Bird border-b border-white/10 flex justify-between items-center bg-blue-900/60 backdrop-blur-xl flex-shrink-0">
+            <div class="flex items-center gap-4 Bird">
+                <button id="closeAgenda" class="Bird p-2 text-white/70 hover:text-white transition-colors bg-white/10 rounded-lg outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <h2 class="text-lg Bird font-bold brand-font text-white">Próximas Reservas</h2>
+            </div>
+            <div id="agendaCount" class="text-[10px] Bird font-bold text-yellow-400 bg-white/10 px-2 py-1 rounded-full uppercase tracking-wider">Aguarde...</div>
+        </div>
+        <div class="search-area Bird">
+            <div class="relative max-w-xl mx-auto Bird">
+                <input type="text" id="agendaSearch" placeholder="Procurar por nome" class="w-full bg-white/10 Bird Bird border Bird border-white/10 rounded-xl Bird Bird Bird py-2.5 pl-9 pr-4 text-white placeholder-white/30 text-sm focus:outline-none focus:bg-white/20 focus:border-yellow-400/50 transition-all">
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 Bird">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+            </div>
+        </div>
+        <div id="agendaContainer" class="Bird flex-1 overflow-y-auto p-4 pt-0 space-y-4 no-scrollbar pb-10">
+            <div id="agendaLoading" class="Bird flex flex-col gap-4 mt-4">
+                <div class="skeleton-card"><div class="shimmer-overlay Bird"></div></div>
+                <div class="skeleton-card"><div class="shimmer-overlay Bird"></div></div>
+                <div class="skeleton-card"><div class="shimmer-overlay Bird"></div></div>
+            </div>
+        </div>
+        <div id="agendaPagination" class="px-5 py-4 Bird Bird border-t Bird border-white/10 hidden bg-blue-900/40">
+            <button id="viewMoreAgenda" class="Bird w-full Bird py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-bold text-sm transition-all active:scale-95">Ver mais agendamentos</button>
         </div>
     </div>
 
-    <!-- Interface Principal -->
-    <div class="glass-container">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, arrayUnion, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const fbConfigRaw = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const AGENDA_API = 'https://script.google.com/macros/s/AKfycbz_4NqmCf3iwAzXdBTUC-o1C9d_029b6g-HP6QyD8oEaHKt5eNjSd3eWsB9EaRJo9Nj/exec';
+        const NOTIF_URL = 'notificacoes.json';
+
+        let db, auth, user;
+        let readIds = JSON.parse(localStorage.getItem('encanto_read_ids') || '[]').map(id => Number(id)); 
+        let rawNotifications = [];
+        let agendaData = [];
+        let agendaVisibleLimit = 5;
+        let isLoadingAgenda = false;
+        let searchQuery = "";
+
+        const getEl = (id) => document.getElementById(id);
+
+        const init = async () => {
+            fetchNotifications();
+            handleMarketingTooltip();
+            if (fbConfigRaw) {
+                try {
+                    const app = initializeApp(JSON.parse(fbConfigRaw));
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    await signInAnonymously(auth);
+                    onAuthStateChanged(auth, u => { if (u) { user = u; setupPersistenceListener(); } });
+                } catch (e) { console.warn("Firebase Offline"); }
+            }
+        };
+
+        function handleMarketingTooltip() {
+            const hasSeen = localStorage.getItem('encanto_marketing_v14');
+            const tooltip = getEl('marketingTooltip');
+            const overlay = getEl('tooltipOverlay');
+            const closeBtn = getEl('closeMarketing');
+            if (!hasSeen && tooltip && overlay) {
+                setTimeout(() => {
+                    overlay.classList.remove('hidden');
+                    tooltip.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                }, 800);
+                closeBtn.onclick = () => {
+                    tooltip.classList.add('hidden');
+                    overlay.classList.add('hidden');
+                    document.body.style.overflow = '';
+                    localStorage.setItem('encanto_marketing_v14', 'true');
+                };
+            }
+        }
+
+        const setupPersistenceListener = () => {
+            if (!user || !db) return;
+            const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'notification_data', 'state');
+            onSnapshot(stateRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cloudIds = (docSnap.data().readIds || []).map(id => Number(id));
+                    readIds = [...new Set([...readIds, ...cloudIds])];
+                    localStorage.setItem('encanto_read_ids', JSON.stringify(readIds));
+                    updateNotifUI();
+                }
+            });
+        };
+
+        async function fetchAgenda() {
+            if (isLoadingAgenda) return;
+            isLoadingAgenda = true;
+            const container = getEl('agendaContainer');
+            const countEl = getEl('agendaCount');
+            if (countEl) countEl.innerText = 'Consultando...';
+            container.innerHTML = `
+                <div class="Bird flex flex-col gap-4 mt-4 Bird">
+                    <div class="skeleton-card"><div class="shimmer-overlay Bird"></div></div>
+                    <div class="skeleton-card"><div class="shimmer-overlay Bird"></div></div>
+                    <div class="skeleton-card"><div class="shimmer-overlay Bird"></div></div>
+                </div>
+            `;
+            try {
+                const res = await fetch(AGENDA_API);
+                const data = await res.json();
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                agendaData = data.filter(item => {
+                    const dateVal = item.EVENTO || item.dia || item.data;
+                    return parseSheetDate(dateVal) >= today;
+                }).sort((a, b) => parseSheetDate(a.EVENTO || a.dia) - parseSheetDate(b.EVENTO || b.dia));
+                renderAgenda();
+            } catch (e) {
+                container.innerHTML = `<p class="Bird text-white/50 text-center py-10">Não foi possível carregar as reservas no momento.</p>`;
+                if (countEl) countEl.innerText = 'Erro';
+            } finally { 
+                isLoadingAgenda = false; 
+            }
+        }
+
+        function parseSheetDate(dateStr) {
+            if (!dateStr) return new Date();
+            if (String(dateStr).includes('-') && String(dateStr).includes('T')) return new Date(dateStr);
+            const parts = String(dateStr).split('/');
+            if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+            return new Date(dateStr);
+        }
+
+        function formatPhone(phone) {
+            if (!phone) return "(xx) xxxxx-x***";
+            let cleaned = ('' + phone).replace(/\D/g, '');
+            if (cleaned.length < 10) return phone;
+            return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7, 8)}***`;
+        }
+
+        function renderAgenda() {
+            const container = getEl('agendaContainer');
+            const countEl = getEl('agendaCount');
+            if (!container) return;
+            const filtered = searchQuery.trim() === "" ? agendaData : agendaData.filter(item => {
+                const nome = (item.NOME || '').toLowerCase();
+                return nome.includes(searchQuery.toLowerCase());
+            });
+            if (countEl) countEl.innerText = searchQuery ? `${filtered.length} ENCONTRADOS` : `${agendaData.length} RESERVAS`;
+            const visibleItems = filtered.slice(0, searchQuery ? 100 : agendaVisibleLimit);
+            if (visibleItems.length === 0) {
+                container.innerHTML = `<div class="Bird text-center py-20 opacity-30 text-white brand-font text-xl">${searchQuery ? 'Sem resultados.' : 'Sem reservas futuras.'}</div>`;
+                return;
+            }
+            const today = new Date(); today.setHours(0,0,0,0);
+            const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+            let lastMonthYear = "";
+            let html = "";
+            visibleItems.forEach((item) => {
+                const date = parseSheetDate(item.EVENTO || item.dia || item.data);
+                const checkDate = new Date(date); checkDate.setHours(0,0,0,0);
+                const monthYearKey = `${date.getMonth()}-${date.getFullYear()}`;
+                if (monthYearKey !== lastMonthYear) {
+                    const monthName = date.toLocaleDateString('pt-PT', { month: 'long' });
+                    const isThisMonth = date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+                    html += `<div class="month-divider Bird">${isThisMonth ? 'ESTE MÊS' : monthName}</div>`;
+                    lastMonthYear = monthYearKey;
+                }
+                let dateBadgeHtml = "";
+                if (checkDate.getTime() === today.getTime()) {
+                    dateBadgeHtml = `<span class="text-[11px] font-black text-[#1e3a8a] Bird">HOJE</span>`;
+                } else if (checkDate.getTime() === tomorrow.getTime()) {
+                    dateBadgeHtml = `<span class="text-[10px] Bird font-black text-[#1e3a8a] Bird leading-none uppercase text-center">AMA<br>NHÃ</span>`;
+                } else {
+                    dateBadgeHtml = `<span class="text-[10px] Bird uppercase font-bold opacity-70 Bird leading-none text-[#1e3a8a]/80">${date.toLocaleDateString('pt-PT', { month: 'short' }).replace('.','')}</span><span class="Bird text-xl font-bold brand-font Bird leading-none text-[#1e3a8a] Bird">${date.getDate()}</span>`;
+                }
+                const itensRaw = item["ITENS LOCADOS"] || 'Equipamentos Diversos';
+                const itensList = itensRaw.split(',').map(i => i.trim()).join('<br>');
+                const bairro = item.BAIRRO || item.bairro || '';
+                html += `<div class="Bird item-card p-4 rounded-[1.5rem] text-white shadow-lg flex flex-col gap-3"><div class="flex items-center gap-4 Bird"><div class="date-badge Bird">${dateBadgeHtml}</div><div class="flex-1 Bird min-w-0 Bird"><h3 class="font-bold Bird text-sm leading-tight mb-0.5 truncate flex items-center gap-1.5 Bird Bird">${item.NOME || 'Cliente Encanto'} ${bairro ? `<span class="Bird text-[10px] font-medium text-slate-400 Bird whitespace-nowrap opacity-90 tracking-tight">(${bairro})</span>` : ''}</h3><p class="Bird text-[12px] text-blue-100/70 font-medium Bird">${formatPhone(item.WHATSAPP || item.telefone)}</p></div></div><div class="pt-2 Bird border-t Bird border-white/5 Bird"><p class="text-[11px] text-yellow-400 Bird font-bold italic Bird Bird Bird Bird Bird Bird leading-relaxed uppercase tracking-tight">${itensList}</p></div></div>`;
+            });
+            container.innerHTML = html;
+            const pagination = getEl('agendaPagination');
+            if (pagination) pagination.classList.toggle('hidden', searchQuery !== "" || agendaVisibleLimit >= agendaData.length);
+        }
+
+        async function fetchNotifications() {
+            try {
+                const response = await fetch(`${NOTIF_URL}?t=${new Date().getTime()}`);
+                if (response.ok) rawNotifications = await response.json();
+            } catch (e) {
+                rawNotifications = [{ id: 101, titulo: "Bem-vindo! 🎈", mensagem: "Confira as novidades no seu painel.", tipo: "info", data: new Date().toISOString() }];
+            }
+            updateNotifUI();
+        }
+
+        function updateNotifUI() {
+            const active = rawNotifications.filter(n => !readIds.includes(Number(n.id)));
+            active.sort((a, b) => new Date(b.data) - new Date(a.data));
+            const badge = getEl('notifBadge');
+            if (badge) badge.classList.toggle('hidden', active.length === 0);
+            renderNotifs(active);
+        }
+
+        function renderNotifs(list) {
+            const container = getEl('notifContainer');
+            if (!container) return;
+            if (list.length === 0) {
+                container.innerHTML = `<div class="Bird text-center py-20 opacity-20 text-white brand-font text-xl">Tudo em dia!</div>`;
+                return;
+            }
+            container.innerHTML = '';
+            list.forEach(n => {
+                const card = document.createElement('div');
+                card.className = "item-card p-4 rounded-[1.5rem] text-white shadow-lg cursor-pointer Bird";
+                card.innerHTML = `<div class="flex Bird gap-3"><div class="w-10 h-10 shrink-0 Bird rounded-xl Bird Bird bg-white/10 flex items-center justify-center text-xl shadow-inner pointer-events-none">${n.tipo === 'alerta' ? '⚡' : '✨'}</div><div class="flex-1 Bird min-w-0 pointer-events-none Bird"><h3 class="font-bold Bird text-sm Bird Bird Bird Bird Bird leading-tight mb-1 text-white Bird">${n.titulo}</h3><p class="Bird text-[13px] text-blue-50/80 Bird mb-2 Bird leading-relaxed line-clamp-msg Bird Bird Bird">${n.mensagem}</p><button class="mark-btn text-[10px] Bird font-bold text-blue-300 Bird hover:text-white Bird uppercase transition-colors pointer-events-auto Bird">Marcar lido</button></div></div>`;
+                card.onclick = (e) => {
+                    if (e.target.classList.contains('mark-btn')) {
+                        e.stopPropagation(); if(card) card.classList.add('dismissing'); setTimeout(() => persistReadId(n.id), 450); return;
+                    }
+                    const msgPara = card.querySelector('.line-clamp-msg');
+                    if (msgPara) {
+                        const isTruncated = msgPara.scrollHeight > msgPara.clientHeight;
+                        if (isTruncated && !card.classList.contains('expanded')) { card.classList.add('expanded'); }
+                        else if (n.link) window.location.href = n.link;
+                    }
+                };
+                container.appendChild(card);
+            });
+        }
+
+        async function persistReadId(id) {
+            const nid = Number(id);
+            if (!readIds.includes(nid)) { readIds.push(nid); localStorage.setItem('encanto_read_ids', JSON.stringify(readIds)); }
+            updateNotifUI();
+            if (user && db) {
+                const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'notification_data', 'state');
+                try { await updateDoc(stateRef, { readIds: arrayUnion(nid) }); } catch (e) { await setDoc(stateRef, { readIds }); }
+            }
+        }
+
+        async function markAllNotificationsAsRead() {
+            const newIds = rawNotifications.map(n => Number(n.id));
+            readIds = [...new Set([...readIds, ...newIds])];
+            localStorage.setItem('encanto_read_ids', JSON.stringify(readIds));
+            updateNotifUI();
+            if (user && db) {
+                const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'notification_data', 'state');
+                try { await updateDoc(stateRef, { readIds: readIds }); } catch (e) { await setDoc(stateRef, { readIds: readIds }); }
+            }
+        }
+
+        const setupUIListeners = () => {
+            const btns = { notif: getEl('notifBtn'), agenda: getEl('agendaBtn'), closeNotif: getEl('closeNotif'), closeAgenda: getEl('closeAgenda'), viewMore: getEl('viewMoreAgenda'), markAll: getEl('markAllRead') };
+            const modals = { notif: getEl('notifModal'), agenda: getEl('agendaModal') };
+            const searchInput = getEl('agendaSearch');
+            if (btns.notif && modals.notif) {
+                btns.notif.onclick = () => { modals.notif.classList.remove('hidden'); setTimeout(() => modals.notif.classList.add('active'), 10); };
+            }
+            if (btns.agenda && modals.agenda) {
+                btns.agenda.onclick = () => { 
+                    modals.agenda.classList.remove('hidden'); 
+                    setTimeout(() => { 
+                        modals.agenda.classList.add('active'); 
+                        fetchAgenda(); 
+                        if (searchInput) searchInput.focus(); 
+                    }, 10); 
+                };
+            }
+            if (btns.closeNotif && modals.notif) {
+                btns.closeNotif.onclick = () => { modals.notif.classList.remove('active'); setTimeout(() => modals.notif.classList.add('hidden'), 400); };
+            }
+            if (btns.closeAgenda && modals.agenda) {
+                btns.closeAgenda.onclick = () => { modals.agenda.classList.remove('active'); setTimeout(() => modals.agenda.classList.add('hidden'), 400); };
+            }
+            if (btns.viewMore) {
+                btns.viewMore.onclick = () => { agendaVisibleLimit += 5; renderAgenda(); };
+            }
+            if (btns.markAll) {
+                btns.markAll.onclick = () => markAllNotificationsAsRead();
+            }
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => { searchQuery = e.target.value; renderAgenda(); });
+            }
+        };
+        setupUIListeners();
+        init();
+    </script>
+</body>
+</html>
+<body class="pb-32 bg-slate-50">
+
+    <div id="cartToast">Adicionado ao carrinho</div>
+
+    <header class="pt-24 pb-4 Bird text-center Bird bg-white border-b Bird border-slate-50 Bird">
+        <h1 class="text-lg Bird font-bold text-[#003399] Bird tracking-tight uppercase Bird Bird Bird Bird Bird">SELECIONE A DATA</h1>
+        <div id="promo50Banner" class="hidden mt-2 py-2 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest animate-pulse">🎁 PROMOÇÃO ATIVA: 2° brinquedo pela metade do valor!</div>
+    </header>
+
+    <main class="px-3 Bird sm:px-5 Bird">
+        <div class="bg-white Bird rounded-[24px] Bird p-4 Bird sm:p-6 Bird shadow-sm Bird border Bird border-slate-100 Bird mt-2 Bird min-h-[400px] Bird overflow-hidden">
+            <!-- Alterado: Removido 'hidden' do Loader para aparecer primeiro -->
+            <div id="calendarLoader" class="flex Bird flex-col items-center Bird justify-center py-20 Bird">
+                <div class="w-10 Bird h-10 Bird border-4 Bird border-[#003399] Bird Bird Bird Bird border-t-transparent rounded-full Bird animate-spin Bird"></div>
+                <p class="text-[10px] Bird font-bold Bird text-slate-400 Bird mt-6 Bird uppercase tracking-widest text-center Bird Bird Bird Bird Bird Bird">VERIFICANDO BRINQUEDOS DISPONÍVEIS</p>
+                <div class="mt-8 Bird px-4 Bird max-w-[320px] Bird text-center bg-blue-50/30 Bird p-6 Bird rounded-[24px] Bird border Bird border-blue-100/50 Bird">
+                    <p class="text-[13px] Bird font-bold text-[#003399] Bird uppercase mb-2 Bird tracking-tighter Bird Bird Bird Bird Bird Bird">VOCÊ SABIA?</p>
+                    <p id="triviaText" class="text-[12px] Bird font-medium Bird text-slate-500 Bird Bird Bird leading-relaxed Bird Bird Bird Bird"></p>
+                </div>
+            </div>
+
+            <!-- Alterado: Adicionado 'hidden' ao Content para iniciar escondido -->
+            <div id="calendarContent" class="hidden Bird relative">
+                <div class="flex Bird justify-between Bird items-center mb-8 Bird">
+                    <button id="prevMonthBtn" onclick="changeMonth(-1)" class="w-10 Bird h-10 Bird sm:w-12 Bird sm:h-12 Bird flex items-center justify-center rounded-full bg-slate-50 text-[#003399] transition-colors Bird Bird"><i class="fas fa-chevron-left Bird"></i></button>
+                    <h2 id="currentMonthLabel" class="font-bold Bird text-[#003399] Bird text-base Bird sm:text-lg Bird tracking-tight Bird uppercase Bird Bird Bird Bird Bird Bird">...</h2>
+                    <button id="nextMonthBtn" onclick="changeMonth(1)" class="w-10 Bird h-10 Bird sm:w-12 Bird sm:h-12 Bird flex items-center justify-center rounded-full bg-slate-50 text-[#003399] transition-colors Bird Bird"><i class="fas fa-chevron-right Bird"></i></button>
+                </div>
+
+                <div class="calendar-grid Bird mb-6 Bird" id="calendarGrid"></div>
+
+                <div class="space-y-1 Bird pt-4 Bird border-t Bird border-slate-50 Bird">
+                    <div class="flex Bird justify-between Bird items-center text-[10px] uppercase font-bold tracking-wider mb-2 Bird Bird">
+                        <span class="text-green-600 Bird">Muitos Brinquedos</span>
+                        <span class="text-red-500 Bird">Poucas Vagas</span>
+                    </div>
+                    <div class="availability-bar-container Bird Bird Bird">
+                        <div class="availability-bar Bird" style="background: linear-gradient(90deg, #22C55E 0%, #EAB308 50%, #EF4444 100%)"></div>
+                    </div>
+                    
+                    <!-- Legenda de Emojis -->
+                    <div class="flex Bird justify-center Bird gap-6 Bird mt-4 Bird text-[10px] Bird font-bold Bird uppercase Bird text-slate-400 Bird Bird">
+                        <div class="flex Bird items-center Bird gap-1.5 Bird Bird"><span class="text-[11px]">❌</span> <span>Dia indisponível</span></div>
+                        <div class="flex Bird items-center Bird gap-1.5 Bird Bird"><span class="text-[11px]">🕒</span> <span>Montagem Flexível</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        <div id="loadingScreen">
-            <div class="spinner"></div>
-            <p class="loading-text">Verificando brinquedos disponíveis</p>
+        <div class="mt-8 Bird h-10 Bird Bird Bird Bird"></div>
+    </main>
+
+    <div class="overlay Bird" id="overlay" onclick="closeSheet()"></div>
+    
+    <div class="bottom-sheet Bird" id="toySheet">
+        <!-- Area de Grabber para Arrastar -->
+        <div class="drag-handle-area Bird Bird Bird">
+            <div class="w-12 Bird h-1.5 Bird bg-slate-200 Bird rounded-full Bird mx-auto Bird"></div>
         </div>
 
-        <div id="calendarUI">
-            <div class="calendar-header">
-                <button id="prevMonth" class="p-2 bg-white shadow-sm border border-slate-200 rounded-lg disabled:opacity-20 active:bg-slate-50">
-                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                <h2 id="monthYear"></h2>
-                <button id="nextMonth" class="p-2 bg-white shadow-sm border border-slate-200 rounded-lg disabled:opacity-20 active:bg-slate-50">
-                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
-                </button>
+        <div class="sticky Bird top-0 bg-white Bird z-10 Bird px-6 Bird pb-2 Bird">
+            <div class="flex Bird justify-between Bird items-start Bird">
+                <div class="Bird">
+                    <h3 class="text-base Bird font-bold text-[#003399] Bird tracking-tight Bird Bird Bird Bird Bird Bird" id="toySheetTitle">Disponíveis em ...</h3>
+                    <p id="priceLevelLabel" class="text-[11px] Bird font-bold Bird mt-1 Bird leading-tight Bird Bird Bird Bird"></p>
+                </div>
+                <button onclick="closeSheet()" class="w-8 Bird h-8 Bird flex items-center justify-center bg-slate-50 rounded-full text-slate-400 Bird"><i class="fas fa-times Bird"></i></button>
             </div>
 
-            <div class="px-2">
-                <div class="grid grid-cols-7 gap-2 text-center text-[9px] font-black text-slate-400 uppercase mb-4 tracking-widest">
-                    <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+            <div id="toyFilterBar" class="flex Bird gap-2 Bird mt-1 Bird overflow-x-auto no-scrollbar Bird">
+                <select id="sortFilter" onchange="renderToys()" class="p-3 bg-[#003399] text-white rounded-xl Bird text-xs Bird font-bold Bird outline-none Bird border-none Bird uppercase Bird Bird Bird Bird Bird Bird">
+                    <option value="relevance">RELEVÂNCIA</option>
+                    <option value="az">NOME A-Z</option>
+                </select>
+                <select id="ageFilter" onchange="renderToys()" class="p-3 bg-[#003399] text-white rounded-xl Bird text-xs Bird font-bold Bird outline-none Bird border-none Bird uppercase Bird Bird Bird Bird Bird Bird">
+                    <option value="all">TODAS IDADES</option>
+                    <option value="L">LIVRE</option>
+                    <option value="-6">ATÉ 6 ANOS</option>
+                    <option value="-14">ATÉ 14 ANOS</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="px-6 Bird pb-40 Bird">
+            <div id="toyList" class="grid Bird grid-cols-1 Bird gap-4 Bird"></div>
+        </div>
+    </div>
+
+    <div class="bottom-sheet Bird" id="formSheet">
+        <!-- Area de Grabber para Arrastar -->
+        <div class="drag-handle-area Bird Bird Bird">
+            <div class="w-12 Bird h-1.5 Bird bg-slate-200 Bird rounded-full Bird mx-auto Bird"></div>
+        </div>
+
+        <div class="px-6 Bird">
+            <div id="formContent" class="pb-32 Bird"></div>
+        </div>
+    </div>
+
+    <div class="fixed Bird bottom-0 Bird left-0 Bird right-0 Bird bg-white/80 Bird backdrop-blur-md Bird border-t Bird border-slate-100 Bird p-5 Bird z-[60] Bird flex Bird flex-col Bird gap-3 Bird transition-all Bird transform Bird translate-y-0 Bird" id="summaryFooter">
+        <div class="flex Bird justify-between Bird items-end Bird px-1 Bird">
+            <div class="flex Bird flex-col Bird">
+                <span class="text-[10px] Bird font-bold Bird text-slate-400 Bird uppercase Bird tracking-tighter Bird Bird Bird Bird Bird Bird">TOTAL</span>
+                <div class="flex Bird items-center Bird relative">
+                    <span class="text-2xl Bird font-bold text-[#003399] Bird" id="totalValueText">R$ 0,00</span>
                 </div>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-3"></div>
+                <span id="discountBadge" class="hidden Bird mt-1 Bird bg-green-500 Bird text-white Bird text-[8px] Bird px-2 Bird py-0.5 Bird rounded-lg Bird font-bold Bird shadow-sm Bird uppercase Bird Bird Bird Bird Bird Bird w-fit"></span>
+                <span id="savingsText" class="hidden Bird text-[9px] Bird text-green-500 Bird font-bold Bird leading-none Bird mt-1 Bird uppercase Bird Bird Bird Bird Bird Bird Bird">Você economizou R$ 0,00</span>
+            </div>
+            <div class="text-right Bird">
+                <span id="deliveryText" class="text-[8px] Bird font-bold Bird uppercase Bird tracking-tighter Bird Bird Bird Bird Bird Bird Bird Bird"></span>
+            </div>
+        </div>
+        <div class="flex Bird gap-3 Bird">
+            <button id="backBtn" onclick="prevStep()" class="hidden Bird px-5 Bird btn-secondary Bird py-4 Bird rounded-2xl Bird transition-all Bird flex Bird items-center Bird justify-center Bird Bird Bird">
+                <i class="fas fa-chevron-left text-[14px]"></i>
+            </button>
+            <button id="mainBtn" onclick="nextStep()" class="w-full Bird btn-primary Bird Bird py-4 Bird rounded-2xl Bird text-lg Bird shadow-xl Bird active:scale-95 Bird transition-all Bird uppercase Bird Bird Bird Bird Bird Bird Bird">
+                Continuar
+            </button>
+        </div>
+    </div>
+
+    <div id="pixPopup" class="fixed Bird inset-0 Bird bg-[#003399]/40 Bird backdrop-blur-sm Bird flex Bird items-center Bird justify-center Bird z-[200] Bird hidden Bird p-6 Bird">
+        <div class="bg-white Bird p-8 Bird rounded-[32px] Bird text-center Bird w-full Bird max-sm Bird shadow-2xl Bird">
+            <div class="w-20 Bird h-20 Bird bg-green-500 Bird text-white Bird rounded-full Bird flex Bird items-center Bird justify-center Bird mx-auto Bird mb-6 Bird shadow-inner Bird">
+                <i class="fas Bird fa-calendar-check Bird text-3xl Bird"></i>
+            </div>
+            <h4 class="text-2xl Bird font-bold text-slate-800 Bird mb-2 Bird uppercase Bird Bird Bird Bird Bird Bird">Reservado!</h4>
+            <p class="text-slate-500 Bird text-sm Bird mb-2 Bird leading-relaxed Bird font-bold Bird Bird Bird Bird Bird Bird Bird Bird">Para manter sua reserva, pedimos um pequeno sinal de <b>R$ 25,00</b> e o restante no dia da montagem.</p>
+            
+            <div class="bg-blue-50/50 Bird py-3 Bird px-4 Bird rounded-2xl Bird mb-6 Bird Bird Bird Bird Bird inline-block Bird">
+                <p class="text-[10px] Bird font-bold text-[#003399] Bird Bird uppercase Bird tracking-widest Bird mb-1 Bird Bird Bird Bird Bird Bird">VALOR TOTAL</p>
+                <p class="text-[#003399] Bird font-bold text-3xl Bird tracking-tighter Bird" id="pixFinalTotalDisplay">R$ 0,00</p>
+            </div>
+            
+            <div class="bg-slate-50 Bird p-4 Bird rounded-2xl Bird mb-6 Bird border-2 Bird border-dashed Bird border-slate-200 Bird relative Bird">
+                <span class="absolute Bird -top-3 Bird left-4 Bird bg-white Bird px-2 Bird text-[10px] Bird font-bold Bird text-slate-400 Bird Bird Bird Bird Bird Bird Bird">CNPJ PIX</span>
+                <code class="text-blue-900 Bird font-mono Bird font-bold Bird" id="pixKey">57.545.647/0001-16</code>
             </div>
 
-            <div class="px-4 mt-8">
-                <div class="bg-slate-50 p-5 rounded-[2.5rem] border border-slate-200 relative text-center">
-                    <div class="flex justify-between text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">
-                        <span>Esgotado</span>
-                        <span>Disponível</span>
-                    </div>
-                    <div class="relative mt-2 px-1">
-                        <div id="indicatorArrow"></div>
-                        <div class="availability-pill"></div>
-                    </div>
-                </div>
-            </div>
+            <button id="pixBtn" onclick="copyPixOnly()" class="w-full Bird btn-primary Bird py-4 Bird rounded-2xl Bird mb-4 Bird uppercase Bird Bird Bird Bird Bird Bird Bird Bird">COPIAR CHAVE PIX</button>
+            <button onclick="location.reload()" class="text-slate-400 Bird text-xs Bird font-bold Bird uppercase Bird tracking-widest Bird Bird Bird Bird Bird Bird Bird Bird Bird">Sair</button>
         </div>
     </div>
 
     <script>
-        const loadingScreen = document.getElementById('loadingScreen');
-        const calendarUI = document.getElementById('calendarUI');
-        const monthYearElement = document.getElementById('monthYear');
-        const calendarGrid = document.getElementById('calendarGrid');
-        const prevBtn = document.getElementById('prevMonth');
-        const nextBtn = document.getElementById('nextMonth');
-        const indicatorArrow = document.getElementById('indicatorArrow');
-        const popupModal = document.getElementById('popupModal');
-        const modalBody = document.getElementById('modalBody');
-        const modalTitle = document.getElementById('modalTitle');
-        const priceCategoryElement = document.getElementById('priceCategory');
-        const closeModal = document.getElementById('closeModal');
-        const modalOverlay = document.getElementById('modalOverlay');
+        const API_URL = "https://script.google.com/macros/s/AKfycbwdUg2e6m0Nf96QW7w2pcTB_fTPcaHpSyY4vlFVMnZ5yImFFxnlhOcPyRH7f7pmPvd_/exec"; 
+        
+        // --- CONFIGURAÇÃO TELEGRAM ---
+        const TELEGRAM_TOKEN = "7731612058:AAEPNWozAfXa5J1mKwfFNCjBwBijrIvOlr8"; 
+        const TELEGRAM_CHAT_ID = "6791831671"; 
+        
+        // --- CONFIGURAÇÃO DATAS INDISPONÍVEIS (MANUTENÇÃO) ---
+        const DATAS_INDISPONIVEIS = ["02/02/2026", "03/02/2026", "04/02/2026", "14/03/2026", "12/06/2026", "13/06/2026", "14/06/2026", "18/04/2026", "19/04/2026"]; 
 
-        let currentDate = new Date();
-        let bookings = []; 
-        let activeInventory = []; 
-        let currentSort = 'alpha';
-        let currentAgeFilter = 'all';
-        let currentMultiplier = 1.0;
-
-        const API_URL = 'https://script.google.com/macros/s/AKfycbz_4NqmCf3iwAzXdBTUC-o1C9d_029b6g-HP6QyD8oEaHKt5eNjSd3eWsB9EaRJo9Nj/exec';
-
-        const MASTER_INVENTORY = [
-            { id: 1, name: "Cama Elástica Pequena", total: 1, price: 170, ageRating: 14, relRank: 1, image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/camap.webp" },
-            { id: 2, name: "Cama Elástica Média", total: 3, price: 190, ageRating: 14, relRank: 1, image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/camam.webp" },
-            { id: 3, name: "Castelinho Pula Pula", total: 1, price: 210, ageRating: 14, relRank: 1, image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/castelinho.webp" },
-            { id: 4, name: "Piscina de Bolinhas", total: 2, price: 160, ageRating: "L", relRank: 2, image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/piscina.webp" },
-            { id: 5, name: "Área Baby", total: 1, price: 110, ageRating: 6, relRank: 3, image: "https://raw.githubusercontent.com/encantofestas/site/f0ea7af4a6e04cd75b86a553e57b76b013d87efc/areababy.webp" },
-            { id: 6, name: "Mini Baby Inflável", total: 1, price: 220, ageRating: 6, relRank: 4, image: "https://raw.githubusercontent.com/encantofestas/site/a720b1e6ac30fc028c9396ed923e43d0436a8b5c/minibaby.webp" },
-            { id: 7, name: "Escorrega com Bolinha", total: 1, price: 400, ageRating: 14, relRank: 4, exclusiveGroup: "MOTOR", image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/escorregobol.webp" },
-            { id: 8, name: "Tobogã Médio", total: 1, price: 400, ageRating: 14, relRank: 4, exclusiveGroup: "MOTOR", image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/tobogam.webp" },
-            { id: 9, name: "Futebol de Sabão", total: 1, price: 600, ageRating: 14, relRank: 4, exclusiveGroup: "MOTOR", image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/futebol.webp" },
-            { id: 10, name: "Pebolim", total: 1, price: 200, ageRating: "L", relRank: 5, image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/pebolim.webp" },
-            { id: 11, name: "Air Hockey", total: 1, price: 200, ageRating: "L", relRank: 5, image: "https://raw.githubusercontent.com/encantofestas/site/f0ea7af4a6e04cd75b86a553e57b76b013d87efc/aero.webp" },
-            { id: 12, name: "Ping Pong", total: 1, price: 200, ageRating: "L", relRank: 5, image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/pingpong.webp" },
-            { id: 13, name: "Jogos de Mesa", total: 4, price: 15, ageRating: "L", relRank: 5, image: "https://raw.githubusercontent.com/encantofestas/site/78939e16b69f2e4811df38913e62da278996635e/mesas.webp" }
+        // --- CONFIGURAÇÃO DATAS ATÍPICAS (ENTREGA ANTECIPADA / FLEXÍVEL) ---
+        const DATAS_ATIPICAS = [
+            "11/02/2026", "12/02/2026", "19/02/2026", "20/02/2026",
+            "27/02/2026", "28/02/2026",
+            "20/03/2026", "21/03/2026",
+            "24/04/2026", "25/04/2026",
+            "22/05/2026", "23/05/2026", "24/05/2026"
         ];
 
-        const TOTAL_FROTA = 19;
-        const special3S = ['10-5', '7-12', '8-31', '6-29', '7-6', '7-20', '11-9', '6-7', '6-21', '6-28', '7-13', '8-2', '8-16', '8-17', '9-6', '9-13', '9-20', '9-28', '10-19', '10-26'];
+        let currentDate = new Date();
+        let selectedDate = null;
+        let sheetData = [];
+        let streetList = []; 
+        let globalAgendamentos = {}; 
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+        let cart = [];
+        let currentStep = 'calendar';
+        let insuranceEnabled = false; 
+        let selectedBairro = null;
+        let extraDays = 1;
+        let startTime = "09:00";
+        let endTime = "15:00"; 
+        let monitorsCount = 0;
+        let monitorHours = 2;
+        let rainInfo = "não molha nada";
+        let piscinaCovered = "não"; 
+        let deliveryPreviousDay = false;
+        let socketDistances = {};
+        let couponCode = "";
+        let couponIsValid = false;
+        let paymentMethod = "Pix";
+        let isPromo50Active = false; // Flag para promoção URL
+        
+        var userName = "";
+        var userZap = "";
+        var userRua = "";
+        var userNum = "";
+        var userSN = false;
+        var userDetails = "";
+        var userObs = "";
+        var needsInvoice = false;
+        var userCNPJ = "";
+        var userCEP = "";
+        var referralSource = "";
+        var referralOther = "";
 
-        function getHolidayType(date) {
+        const COUPONS_DB = {
+            "UIOU321": "30% de desconto aplicado!",
+            "3U2O1IU": "30% de desconto aplicado!",
+            "U3O1I2U": "30% de desconto aplicado!",
+            "21O3OI3": "30% de desconto aplicado!",
+            "12O3123": "30% de desconto aplicado!",
+            "OU1IO33": "30% de desconto aplicado!",
+            "13O2I3U": "30% de desconto aplicado!",
+            "0132139": "30% de desconto aplicado!",
+            "MIXCASTLE": "Castelinho por R$ 180,00 aplicado!",
+            "FIVEHUND": "5% de desconto aplicado!",
+            "DEZZOFF": "10% de desconto aplicado!",
+            "MEGAPROMO30": "30% de desconto aplicado!",
+            "MEUCLUB": "R$ 15,00 de desconto na entrega aplicado!",
+            "MEUANO24": "Valores do ano de 2024 aplicado!"
+        };
+
+        const TOYS_DB = [
+            { id: 1, name: "Pula Pula Pequeno", qty: 1, price: 170, category: "pula", age: "14", size: "2.44m", power: false, motorForte: false, relevance: 1, photo: "https://www.dropbox.com/scl/fi/el5jqaoyod5ukwwzaxihx/camap.webp?rlkey=y1zvmsi9cdtsbh3gtb3091a4x&st=bpwuda61&raw=1" },
+            { id: 2, name: "Pula Pula Médio", qty: 3, price: 190, category: "pula", age: "14", size: "3.05m", power: false, motorForte: false, relevance: 2, photo: "https://www.dropbox.com/scl/fi/2xwplyqsnbhndgwde2scg/camam.webp?rlkey=41hiqdgiwnxzvmllf0owgckx8&st=g35vk0oj&raw=1" },
+            { id: 14, name: "Pula Pula Grande", qty: 1, price: 250, category: "pula", age: "14", size: "4.27m", power: false, motorForte: false, relevance: 3, photo: "https://www.dropbox.com/scl/fi/p8cefa8upn9pnqkqdud6b/camag.webp?rlkey=wqcxwv9mcefoenq4frvnxc2jv&st=ojwwh4bq&raw=1" },
+            { id: 3, name: "Piscina de Bolinhas", qty: 2, price: 190, category: "piscina", age: "14", size: "1.5m ou 2m", power: false, motorForte: false, relevance: 4, photo: "https://www.dropbox.com/scl/fi/pr90on1ea81nq30lzpxr8/piscina.webp?rlkey=mp5a9b4yfk5v0tyqt75g0ij2j&st=gp4p2onk&raw=1" },
+            { id: 4, name: "Escorrega Premium", qty: 1, price: 400, category: "toboga", age: "14", size: "3x5m", power: true, motorForte: true, relevance: 5, photo: "https://www.dropbox.com/scl/fi/a673dgh39ak497b6h9e2t/tobogam.webp?rlkey=byhi3k1tklmum2sfq9fyor2rb&st=rz9ming4&raw=1" },
+            { id: 5, name: "Área Baby", qty: 1, price: 120, category: "baby", age: "6", size: "Padrão", power: false, motorForte: false, relevance: 6, photo: "https://www.dropbox.com/scl/fi/fttgp8j0mjdhw22rwgr3i/areababy.webp?rlkey=028cvlshetwv4w7dm3aydbzwj&st=7kmq57d2&raw=1" },
+            { id: 6, name: "Mini Piscina de Bolinhas", qty: 1, price: 190, category: "baby", age: "6", size: "Padrão", power: true, motorForte: false, relevance: 7, photo: "https://www.dropbox.com/scl/fi/fxeu36d83jxv2jpwi2c1n/mini-babyyy.webp?rlkey=kecnwpquq7415hlrwf3j1man4&st=jsdhlky6&raw=1" },
+            // { id: 7, name: "Castelinho Pula Pula", qty: 1, price: 220, category: "baby", age: "14", size: "3m", power: true, motorForte: false, relevance: 8, photo: "https://www.dropbox.com/scl/fi/zn1npqidyhre44o7v1nwr/castelinho.webp?rlkey=8765usqe385cii48inuz99e5j&st=5q2xu57k&raw=1" },
+            // { id: 9, name: "Escorrega com Bolinhas", qty: 1, price: 400, category: "especial", age: "14", size: "Padrão", power: true, motorForte: true, relevance: 8, photo: "https://www.dropbox.com/scl/fi/vqjds36sx0wvhjuxurc4l/escorregobol.webp?rlkey=qxk7tzac8xod1fdzrwr8u508m&st=59u3k5x9&raw=1" },
+            { id: 10, name: "Airhockey", qty: 1, price: 220, category: "mesa_jogo", age: "L", size: "Padrão", power: true, motorForte: false, relevance: 9, photo: "https://www.dropbox.com/scl/fi/ajfbj633cif6lpuqblzrw/aero.webp?rlkey=hw3hlemgizrnj4ta2fkrcs1ep&st=6it80vyn&raw=1" },
+            { id: 11, name: "Pebolim", qty: 1, price: 220, category: "mesa_jogo", age: "L", size: "Padrão", power: false, motorForte: false, relevance: 10, photo: "https://www.dropbox.com/scl/fi/bx7605s0ls33k02y74t4j/pebolim.webp?rlkey=409zdmagm2yj6ao6g4mfhfquj&st=j6elwlyz&raw=1" },
+            { id: 13, name: "Mesas", qty: 4, price: 15, category: "mesa_comer", age: "L", size: "mesa c/ 4 cadeiras", power: false, motorForte: false, relevance: 11, photo: "https://www.dropbox.com/scl/fi/zpcyj8a466fhms7vqwcr6/mesas.webp?rlkey=8ca2hbxbnvxbftagrprq7scj7&st=bb24hbti&raw=1" }
+        ];
+
+        const totalEstoqueGlobal = TOYS_DB.reduce((acc, toy) => acc + toy.qty, 0);
+
+        const BAIRROS = {
+            "Acaraí": 0, "Água Branca": 0, "Capri": 25, "Centro": 0, "Centro Histórico": 0,
+            "Enseada": 10, "Ervino": 25, "Iperoba": 0, "Itaguaçu": 10, "Laranjeiras": 10,
+            "Majorca": 10, "Miranda": 10, "Morro Grande": 0, "Paulas": 0, "Praia Grande": 10,
+            "Reta": 0, "Ribeira": 10, "Rocio Grande": 0, "Rocio Pequeno": 0, "Sandra Regina": 10,
+            "Tapera": 10, "Ubatuba": 10, "Vila da Glória": -1
+        };
+
+        window.onload = async () => {
+            checkUrlPromo(); // Verifica promo50 na URL
+            currentMonth = new Date().getMonth();
+            currentYear = new Date().getFullYear();
+            fetchData();
+            loadStreets();
+            document.getElementById('summaryFooter').style.display = 'none';
+            initDragToClose(); // Inicializa o drag handle
+            initCalendarSwipe(); // Inicializa o swipe lateral com trava
+            initKeyboardNavigation(); // Inicializa navegação profissional com Enter
+        };
+
+        function checkUrlPromo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('ref') === 'promo50' || urlParams.get('promo') === 'promo50') {
+                isPromo50Active = true;
+                const banner = document.getElementById('promo50Banner');
+                if (banner) banner.classList.remove('hidden');
+            }
+        }
+
+        async function loadStreets() {
+            try {
+                const response = await fetch('ruas.json');
+                if (response.ok) streetList = await response.json();
+            } catch (e) {}
+        }
+
+        function normalizeString(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        }
+
+        function normalizeDate(val) {
+            if (!val) return "";
+            if (val instanceof Date) return `${String(val.getDate()).padStart(2,'0')}/${String(val.getMonth()+1).padStart(2,'0')}/${val.getFullYear()}`;
+            let s = String(val).trim();
+            if (!s || s.toLowerCase() === "undefined") return "";
+            let datePart = s.split(' ')[0].split('T')[0]; 
+            let d, m, y;
+            if (datePart.includes('/')) {
+                let p = datePart.split('/');
+                if (p[0].length === 4) { y = p[0]; m = p[1]; d = p[2]; }
+                else { d = p[0]; m = p[1]; y = p[2]; }
+            } else if (datePart.includes('-')) {
+                let p = datePart.split('-');
+                if (p[0].length === 4) { y = p[0]; m = p[1]; d = p[2]; }
+                else { d = p[0]; m = p[1]; y = p[2]; }
+            } else return datePart;
+            return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+        }
+
+        function getPriceLevel(date) {
+            if (!date) return '$$'; 
             const d = date.getDate();
             const m = date.getMonth() + 1;
-            const w = date.getDay(); 
+            const dayOfWeek = date.getDay();
+            const s = `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}`;
             
-            const isNationalFixed = (
-                (m === 4 && d === 21) || (m === 5 && d === 1) || (m === 7 && d === 19) || 
-                (m === 9 && d === 7) || (m === 10 && (d === 11 || d === 12)) ||
-                (m === 11 && (d === 2 || d === 15 || d === 20)) ||
-                (m === 12 && (d === 24 || d === 25 || d === 31)) || (m === 1 && d === 1)
-            );
-            if (isNationalFixed) return "$$$$";
-
-            if (w === 0 || w === 6) {
-                const dateStr = `${m}-${d}`;
-                if (special3S.includes(dateStr)) return "$$$";
-                const checkProximity = [-2, -1, 1, 2];
-                for (let offset of checkProximity) {
-                    const checkDate = new Date(date);
-                    checkDate.setDate(date.getDate() + offset);
-                    const cd = checkDate.getDate();
-                    const cm = checkDate.getMonth() + 1;
-                    const cw = checkDate.getDay();
-                    if (cw >= 1 && cw <= 5) { 
-                        if (special3S.includes(`${cm}-${cd}`)) return "$$$";
-                    }
-                }
-                if (m === 10 || m === 11 || m === 12) return "$$$";
-                return "$$";
-            }
-
-            const dateStr = `${m}-${d}`;
-            if (special3S.includes(dateStr)) return "$$";
-            if (m === 10 || m === 11 || m === 12) return "$$";
-            return "$";
-        }
-
-        function getMultiplier(symbol) {
-            if (symbol === "$") return 0.7; 
-            if (symbol === "$$$") return 1.3;
-            if (symbol === "$$$$") return 1.8;
-            return 1.0; 
-        }
-
-        function roundPrice(val) { return Math.ceil(val / 10) * 10; }
-
-        // --- ATUALIZADO: Nomes das Categorias Conforme Solicitado ---
-        function setPriceCategoryStyle(symbol) {
-            priceCategoryElement.className = ""; 
-            if (symbol === "$") {
-                priceCategoryElement.innerText = "Valores abaixo da média";
-                priceCategoryElement.classList.add("text-green-600");
-            } else if (symbol === "$$$") {
-                priceCategoryElement.innerText = "VALORES UM POUCO ACIMA DA MÉDIA";
-                priceCategoryElement.classList.add("text-orange-400");
-            } else if (symbol === "$$$$") {
-                priceCategoryElement.innerText = "VALORES ACIMA DA MÉDIA";
-                priceCategoryElement.classList.add("text-orange-600");
-            } else priceCategoryElement.innerText = "";
-        }
-
-        function updatePriceSummary() {
-            const footer = document.getElementById('priceFooter');
-            const totalDisplay = document.getElementById('totalDisplay');
-            const originalPrice = document.getElementById('originalPrice');
-            const discountNotice = document.getElementById('discountNotice');
-            let subtotal = 0, itemsCount = 0, hasTables = 0;
+            // 10, 11 e 12 de outubro é $$$$
+            if (s === "10/10" || s === "11/10" || s === "12/10") return '$$$$';
             
-            activeInventory.forEach(item => {
-                if (item.selectedQty > 0) {
-                    let priceToCalc = item.price;
-                    if (item.id !== 13) priceToCalc = roundPrice(item.price * currentMultiplier);
-                    subtotal += priceToCalc * item.selectedQty;
-                    if (item.id === 13) hasTables = 1; else itemsCount += item.selectedQty;
-                }
-            });
+            // Feriados e datas especiais $$$$
+            if (["01/01", "01/05", "07/09", "02/11", "15/11", "25/12"].includes(s)) return '$$$$';
 
-            if (subtotal > 0) {
-                footer.classList.remove('hidden');
-                const comboDiscountPercent = (currentMultiplier < 1.0) ? 0.05 : 0.10;
-                if (itemsCount + hasTables >= 2) {
-                    const discount = subtotal * comboDiscountPercent;
-                    totalDisplay.innerText = `R$ ${(subtotal - discount).toFixed(0)},00`;
-                    originalPrice.innerText = `R$ ${subtotal.toFixed(0)},00`;
-                    originalPrice.classList.remove('hidden');
-                    discountNotice.innerHTML = `<span class="bg-green-100 text-green-700 text-[8px] font-black px-2 py-1 rounded-full">${comboDiscountPercent * 100}% OFF Aplicado</span>`;
-                    discountNotice.classList.remove('hidden');
-                } else {
-                    totalDisplay.innerText = `R$ ${subtotal.toFixed(0)},00`;
-                    originalPrice.classList.add('hidden');
-                    discountNotice.classList.add('hidden');
-                }
-            } else footer.classList.add('hidden');
+            // 24 de dezembro é $$$
+            // 13 de outubro é $$$
+            // Todos os finais de semana de outubro novembro e dezembro é $$$
+            if (s === "24/12" || s === "13/10") return '$$$';
+            if ((m === 10 || m === 11 || m === 12) && (dayOfWeek === 0 || dayOfWeek === 6)) return '$$$';
+
+            const sBase = ["01/04", "31/12", "05/10", "12/07", "31/08", "11/10", "29/06", "06/07", "20/07", "09/11", "07/06", "21/06", "28/06", "13/07", "02/08", "16/08", "17/08", "06/09", "13/09", "20/09", "28/09", "19/10", "26/10"];
+            if (sBase.includes(s)) return '$$$';
+
+            return '$$'; 
         }
 
-        function renderModalList() {
-            modalBody.innerHTML = '';
-            const motorSelected = activeInventory.some(i => i.exclusiveGroup === "MOTOR" && i.selectedQty > 0);
-            let filtered = activeInventory.filter(item => currentAgeFilter === 'all' || String(item.ageRating) === currentAgeFilter);
-            
-            filtered.sort((a, b) => {
-                const isUnA = a.available <= 0 || (a.exclusiveGroup === "MOTOR" && motorSelected && a.selectedQty === 0);
-                const isUnB = b.available <= 0 || (b.exclusiveGroup === "MOTOR" && motorSelected && b.selectedQty === 0);
-                if (isUnA !== isUnB) return isUnA ? 1 : -1;
-                if (currentSort === 'alpha') return a.name.localeCompare(b.name);
-                if (currentSort === 'relevance') return a.relRank - b.relRank;
-                if (currentSort === 'age') {
-                    const vA = a.ageRating === 'L' ? 0 : parseInt(a.ageRating);
-                    const vB = b.ageRating === 'L' ? 0 : parseInt(b.ageRating);
-                    return vA - vB;
-                }
-                return 0;
-            });
-
-            filtered.forEach(item => {
-                const isBlockedByMotor = item.exclusiveGroup === "MOTOR" && motorSelected && item.selectedQty === 0;
-                const isOutOfStock = item.available <= 0 || isBlockedByMotor;
-                const ageClass = item.ageRating === 'L' ? 'age-L' : (item.ageRating === 6 ? 'age-6' : 'age-14');
-                let finalVal = item.id === 13 ? item.price : roundPrice(item.price * currentMultiplier);
-                const displayPrice = finalVal.toFixed(0);
-
-                const card = document.createElement('div');
-                card.className = `toy-card ${isOutOfStock ? 'out-of-stock' : ''}`;
-                card.innerHTML = `
-                    <div class="toy-img-box">
-                        <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/150'">
-                        <div class="age-badge ${ageClass}">${item.ageRating}</div>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-[10px] font-black text-slate-800 uppercase tracking-tighter leading-tight">${item.name}</p>
-                        <p class="text-[11px] font-bold text-blue-600 mt-0.5">R$ ${displayPrice},00</p>
-                    </div>
-                    ${!isOutOfStock ? `
-                    <div class="qty-selector">
-                        <button class="qty-btn" onclick="updateQty(${item.id}, -1)">-</button>
-                        <span id="qty-${item.id}" class="text-[12px] font-black w-4 text-center">${item.selectedQty || 0}</span>
-                        <button class="qty-btn" onclick="updateQty(${item.id}, 1, ${item.available})">+</button>
-                    </div>
-                    ` : `<span class="text-[8px] font-black text-red-500 uppercase px-2">${isBlockedByMotor ? 'MOTOR OCUPADO' : 'Esgotado'}</span>`}
-                `;
-                modalBody.appendChild(card);
-            });
-        }
-
-        window.updateQty = (id, delta, max) => {
-            const item = activeInventory.find(i => i.id === id);
-            if (!item) return;
-            let next = (item.selectedQty || 0) + delta;
-            if (next >= 0 && (max === undefined || next <= max)) {
-                item.selectedQty = next;
-                updatePriceSummary();
-                renderModalList();
-            }
-        };
-
-        window.updateSort = (type) => {
-            currentSort = type;
-            document.querySelectorAll('[id^="sort-"]').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`sort-${type}`).classList.add('active');
-            renderModalList();
-            modalBody.scrollTop = 0;
-        };
-
-        window.updateAgeFilter = (age) => {
-            currentAgeFilter = age;
-            document.querySelectorAll('[id^="age-"]').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`age-${age}`).classList.add('active');
-            renderModalList();
-            modalBody.scrollTop = 0;
-        };
-
-        function showPopup(info) {
-            modalTitle.innerText = `Disponíveis em ${info.date}`;
-            currentMultiplier = getMultiplier(info.priceSymbol);
-            setPriceCategoryStyle(info.priceSymbol);
-            activeInventory = info.dailyInventory.map(i => ({...i, selectedQty: 0}));
-            renderModalList();
-            modalBody.scrollTop = 0; 
-            updatePriceSummary();
-            popupModal.style.display = 'flex';
-            setTimeout(() => popupModal.classList.add('active'), 10);
-        }
-
-        function hidePopup() {
-            popupModal.classList.remove('active');
-            setTimeout(() => popupModal.style.display = 'none', 500);
-        }
-
-        closeModal.onclick = hidePopup;
-        modalOverlay.onclick = hidePopup;
-
-        function setIndicator(percentage, show) {
-            if (show) { indicatorArrow.style.left = percentage + '%'; indicatorArrow.style.opacity = '1'; }
-            else indicatorArrow.style.opacity = '0';
-        }
-
-        function getAvailabilityStyle(percentage) {
-            const agg = Math.pow(percentage / 100, 3.5);
-            const hue = agg * 120; 
-            return { background: `hsl(${hue}, 85%, 48%)`, textColor: (hue > 45 && hue < 90) ? '#0f172a' : '#ffffff' };
-        }
-
-        async function fetchData() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                bookings = data;
-                renderCalendar();
-                loadingScreen.style.opacity = '0';
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                    calendarUI.style.display = 'block';
-                    setTimeout(() => calendarUI.style.opacity = '1', 50);
-                }, 500);
-            } catch (error) { 
-                console.error('Erro:', error);
-                document.querySelector('.loading-text').innerText = "Erro ao carregar dados";
-            }
+        function getDayColorStyle(date) {
+            const dateStr = normalizeDate(date);
+            const agendados = globalAgendamentos[dateStr] || {};
+            let locados = 0;
+            Object.values(agendados).forEach(v => locados += v);
+            if (locados === 0) return 'background-color: #22C55E; color: white;';
+            const ratio = Math.min(locados / totalEstoqueGlobal, 1);
+            const r = Math.round(34 + (239 - 34) * ratio);
+            const g = Math.round(197 + (68 - 197) * ratio);
+            const b = Math.round(94 + (68 - 94) * ratio);
+            return `background-color: rgb(${r}, ${g}, ${b}); color: white; border: 2px solid rgba(255,255,255,0.4); box-shadow: 0 4px 10px rgba(0,0,0,0.1);`;
         }
 
         function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const monthsNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-            monthYearElement.innerText = `${monthsNames[month]} ${year}`;
-            calendarGrid.innerHTML = '';
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            for (let i = 0; i < firstDay; i++) calendarGrid.appendChild(Object.assign(document.createElement('div'), {className: 'opacity-0'}));
-            const today = new Date();
-            const todayAtMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            for (let day = 1; day <= daysInMonth; day++) {
-                const cellDate = new Date(year, month, day);
-                const formatISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const formatBR = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
-                const isPast = cellDate < todayAtMidnight;
-                let dailyInventory = JSON.parse(JSON.stringify(MASTER_INVENTORY)).map(item => ({ ...item, available: item.total }));
-                const dayRecords = bookings.filter(b => {
-                    const dateVal = String(b.EVENTO || b.Data || b.DATA || '').split('T')[0];
-                    return dateVal.includes(formatISO) || dateVal.includes(formatBR);
-                });
-                let totalOccupied = 0, motorBusyThisDay = false;
-                dayRecords.forEach(r => {
-                    const content = String(r["ITENS LOCADOS"] || "").toLowerCase();
-                    if (["futebol de sabão", "tobogã médio", "escorrega com bolinha"].some(name => content.includes(name))) motorBusyThisDay = true;
-                    const matches = content.match(/(\d+)x/g);
-                    if (matches) {
-                        content.split(/•|,|\n/).filter(p => p.trim() !== "").forEach(part => {
-                            const qty = part.match(/(\d+)x/) ? parseInt(part.match(/(\d+)x/)[1]) : 1;
-                            const toyMatch = MASTER_INVENTORY.find(toy => part.toLowerCase().includes(toy.name.toLowerCase()));
-                            if (toyMatch) {
-                                const dailyItem = dailyInventory.find(i => i.id === toyMatch.id);
-                                if (dailyItem) { dailyItem.available = Math.max(0, dailyItem.available - qty); totalOccupied += qty; }
+            const grid = document.getElementById('calendarGrid');
+            const label = document.getElementById('currentMonthLabel');
+            const prevBtn = document.getElementById('prevMonthBtn');
+            const nextBtn = document.getElementById('nextMonthBtn');
+            if (!grid || !label) return;
+            
+            label.innerText = `${["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"][currentMonth]} ${currentYear}`;
+            grid.innerHTML = '';
+
+            const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+            weekDays.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'weekday-header';
+                dayHeader.innerText = day;
+                grid.appendChild(dayHeader);
+            });
+            
+            const today = new Date(); 
+            today.setHours(0,0,0,0);
+            const actualMonth = today.getMonth();
+            const actualYear = today.getFullYear();
+
+            if (currentYear === actualYear && currentMonth === actualMonth) {
+                prevBtn.style.backgroundColor = '#E2E8F0';
+                prevBtn.style.color = '#94A3B8';
+                prevBtn.disabled = true;
+            } else {
+                prevBtn.style.backgroundColor = '#F8FAFC';
+                prevBtn.style.color = '#003399';
+                prevBtn.disabled = false;
+            }
+
+            if (currentYear === actualYear && currentMonth === 11) {
+                nextBtn.style.backgroundColor = '#E2E8F0';
+                nextBtn.style.color = '#94A3B8';
+                nextBtn.disabled = true;
+            } else {
+                nextBtn.style.backgroundColor = '#F8FAFC';
+                nextBtn.style.color = '#003399';
+                nextBtn.disabled = false;
+            }
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(currentYear, currentMonth, d);
+                const isPast = date < today;
+                const isToday = date.getTime() === today.getTime();
+                const styleStr = isPast ? 'opacity: 0.4; pointer-events: none;' : getDayColorStyle(date);
+                const borderClass = isToday ? 'today-anim' : '';
+                
+                const dateStr = normalizeDate(date);
+                let iconHtml = "";
+                
+                if (!isPast) {
+                    if (DATAS_INDISPONIVEIS.includes(dateStr)) {
+                        iconHtml = '<span class="text-[10px] Bird opacity-90 ml-0.5" style="display: inline-block;">❌</span>';
+                    } else if (DATAS_ATIPICAS.includes(dateStr)) {
+                        iconHtml = '<span class="text-[10px] Bird opacity-90 ml-0.5" style="display: inline-block;">🕒</span>';
+                    }
+                }
+
+                const cell = document.createElement('div');
+                cell.className = `day-cell active ${borderClass} ${isPast ? '' : 'cursor-pointer'}`;
+                cell.style = styleStr;
+                
+                cell.innerHTML = `
+                    <div class="flex items-center Bird">
+                        <span class="font-bold Bird">${d}</span>
+                        ${iconHtml}
+                    </div>
+                    <span class="price-indicator Bird" style="color: rgba(255,255,255,0.8)">${getPriceLevel(date)}</span>
+                `;
+
+                if (!isPast) cell.onclick = () => selectDate(date);
+                grid.appendChild(cell);
+            }
+        }
+
+        function selectDate(date) {
+            const dateStr = normalizeDate(date);
+            if (DATAS_INDISPONIVEIS.includes(dateStr)) {
+                const modal = document.createElement('div');
+                modal.className = "fixed inset-0 bg-black/60 z-[500] flex items-center justify-center p-6";
+                modal.innerHTML = `
+                    <div class="bg-white p-8 rounded-3xl text-center shadow-2xl max-w-xs font-bold Bird">
+                        <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-tools text-2xl"></i>
+                        </div>
+                        <p class="text-slate-800 text-lg uppercase mb-3 Bird">DIA INDISPONÍVEL :/</p>
+                        <p class="text-slate-500 text-sm font-bold leading-relaxed mb-4 Bird Bird">
+                            Por algum motivo, não estamos reservando mais neste dia, você pode tentar entrar em contato conosco para indicarmos alguém ou tentar entregarmos mesmo assim....
+                        </p>
+                        <button onclick="this.parentElement.parentElement.remove()" class="w-full btn-primary py-3 rounded-xl uppercase font-bold Bird Bird">VER OUTRA DATA</button>
+                    </div>`;
+                document.body.appendChild(modal);
+                return;
+            }
+
+            if (DATAS_ATIPICAS.includes(dateStr)) {
+                const modal = document.createElement('div');
+                modal.className = "fixed inset-0 bg-black/60 z-[500] flex items-center justify-center p-6";
+                modal.innerHTML = `
+                    <div class="bg-white p-8 rounded-3xl text-center shadow-2xl max-w-sm font-bold Bird">
+                        <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-clock text-2xl"></i>
+                        </div>
+                        <p class="text-slate-800 text-lg uppercase mb-3 Bird">Aviso Importante</p>
+                        <p class="text-slate-500 text-sm font-bold leading-relaxed mb-6 Bird">
+                            Devido às dificuldades de acesso nesta data, os horários de entrega são flexíveis e podem ocorrer <span class="text-[#003399]">1 ou 2 dias antes do previsto</span>, ou não seja possível entregar, a depender dos seus horários.
+                            <br><br>
+                            Combinaremos o melhor horário com você pelo WhatsApp!
+                        </p>
+                        <button onclick="this.parentElement.parentElement.remove()" class="w-full btn-primary py-4 rounded-xl uppercase font-bold Bird shadow-lg active:scale-95 transition-all">ESTOU CIENTE, CONTINUAR</button>
+                    </div>`;
+                document.body.appendChild(modal);
+            }
+
+            const today = new Date(); today.setHours(0,0,0,0);
+            if (date.getTime() === today.getTime()) {
+                const modal = document.createElement('div');
+                modal.className = "fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-6";
+                modal.innerHTML = `<div class="bg-white p-8 rounded-3xl text-center shadow-2xl max-w-xs font-bold Bird"><i class="fas fa-exclamation-triangle text-orange-500 text-4xl mb-4"></i><p class="font-bold text-slate-800">Atenção! Como sua reserva é hoje, os brinquedos escolhidos podem estar indisponíveis, mesmo que apareça disponível no site, e o horário de entrega pode sofrer atraso.<br>Após o agendamento nos confirme no WhatsApp :)</p><p class="text-green-600 font-bold mt-4">(47) 99227-7324</p><button onclick="this.parentElement.parentElement.remove()" class="mt-6 w-full btn-primary py-3 rounded-xl uppercase font-bold Bird Bird Bird">Entendido</button></div>`;
+                document.body.appendChild(modal);
+            }
+            selectedDate = date; 
+            currentStep = 'toys'; 
+            openSheet('toySheet');
+            document.getElementById('toySheetTitle').innerText = `Disponíveis em ${normalizeDate(date)}`;
+            
+            const pl = getPriceLevel(date);
+            const plLabel = document.getElementById('priceLevelLabel');
+            const filterBar = document.getElementById('toyFilterBar');
+            
+            if (filterBar) {
+                if (pl === '$$') {
+                    plLabel.innerHTML = '';
+                    filterBar.classList.replace('mt-4', 'mt-1');
+                } else {
+                    filterBar.classList.replace('mt-1', 'mt-4');
+                    if (pl === '$') {
+                        plLabel.innerHTML = `<span class="text-green-600 font-bold">Data pouco requisitada</span><br><span class="text-[10px] text-green-500 font-bold uppercase Bird Bird Bird Bird">PREÇOS MAIS BAIXO QUE O NORMAL</span>`;
+                    } else if (pl === '$$$' || pl === '$$$$') {
+                        plLabel.innerHTML = `<span class="text-[10px] text-orange-500 font-bold uppercase Bird Bird Bird Bird">PREÇOS AJUSTADOS DEVIDO ALTA PROCURA NESTA DATA</span>`;
+                    }
+                }
+            }
+
+            cart = []; 
+            renderToys(); 
+            updateSummary();
+            document.getElementById('summaryFooter').style.display = 'flex';
+        }
+
+        async function fetchData() {
+            if (!API_URL) return;
+            const loader = document.getElementById('calendarLoader');
+            const content = document.getElementById('calendarContent');
+            const triviaTextEl = document.getElementById('triviaText');
+            
+            if (triviaTextEl) {
+                const trivias = [
+                    "+ de 500 brinquedos montados e a gente ainda dá aquela espiadinha no manual... só pra garantir! 😅",
+                    "Sabia que nossa equipe desenvolveu músculos de tanto carregar infláveis? 💪😂",
+                    "A gente consegue dobrar um tobogã gigante melhor do que você dobra seus lençóis elástico!",
+                    "O pula-pula é o único convidado que chega cedo, não come nada e trabalha a festa inteira sem reclamar!",
+                    "O GPS da Encanto Festas já conhece tantos atalhos que ele deveria ganhar um prêmio de Guia Turístico da cidade!",
+                    "A gente já decorou o nome de metade dos cachorros da cidade de tanto visitar quintais para montar diversão! 🐶",
+                    "A gente sabe que o trabalho foi bem feito quando a criança chora... porque não quer que a gente leve o brinquedo embora!",
+                    "A gente já encontrou de tudo dentro de uma piscina de bolinhas: de um sabato perdido até um controle remoto que a família procurava há meses!",
+                    "Nossa equipe descobriu uma nova lei da física: o tamanho de um inflável triplica na hora de guardar e o espaço do carro diminui pela metade!",
+                    "A Encanto Festas já percorreu quilômetros suficientes para ir até a Lua... mas a gente preferiu ficar aqui montando brinquedos."
+                ];
+                triviaTextEl.innerText = trivias[Math.floor(Math.random() * trivias.length)];
+            }
+
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                sheetData = Array.isArray(data) ? data : [];
+                const mapNomeId = {};
+                TOYS_DB.forEach(b => { mapNomeId[b.name.toLowerCase()] = b.id; });
+                const novosAgendamentos = {};
+                sheetData.forEach(row => {
+                    const dateISO = normalizeDate(row['EVENTO'] || row['INICIO']);
+                    if (!dateISO) return;
+                    if (!novosAgendamentos[dateISO]) novosAgendamentos[dateISO] = {};
+                    const itensStr = row['ITENS LOCADOS'] || row['BRINQUEDO'];
+                    if (itensStr) {
+                        const linhas = String(itensStr).split(/[,\n;]/);
+                        linhas.forEach(linha => {
+                            const match = linha.trim().match(/(?:•\s*)?(\d+)\s*x\s*(.+)/i);
+                            if (match) {
+                                const qtd = parseInt(match[1]);
+                                const id = mapNomeId[match[2].trim().toLowerCase()] || TOYS_DB.find(t => match[2].trim().toLowerCase().includes(t.name.toLowerCase()))?.id;
+                                if (id) novosAgendamentos[dateISO][id] = (novosAgendamentos[dateISO][id] || 0) + qtd;
+                            } else {
+                                const id = TOYS_DB.find(t => linha.trim().toLowerCase().includes(t.name.toLowerCase()))?.id;
+                                if (id) novosAgendamentos[dateISO][id] = (novosAgendamentos[dateISO][id] || 0) + 1;
                             }
                         });
                     }
                 });
-                if (motorBusyThisDay) dailyInventory.forEach(item => { if (item.exclusiveGroup === "MOTOR") item.available = 0; });
-                const cell = document.createElement('div');
-                cell.className = 'day-cell';
-                const priceSymbol = isPast ? "" : getHolidayType(cellDate);
-                cell.innerHTML = `<span>${day}</span><span class="price-symbol">${priceSymbol}</span>`;
-                const availabilityPercentage = ((TOTAL_FROTA - totalOccupied) / TOTAL_FROTA) * 100;
-                if (isPast) cell.classList.add('is-past');
-                else {
-                    const style = getAvailabilityStyle(availabilityPercentage);
-                    cell.style.backgroundColor = style.background;
-                    cell.style.color = style.textColor;
-                    cell.onmouseenter = () => setIndicator(availabilityPercentage, true);
-                    cell.onmouseleave = () => setIndicator(availabilityPercentage, false);
-                    cell.onclick = () => showPopup({ date: formatBR, dailyInventory: dailyInventory, priceSymbol: getHolidayType(cellDate) });
-                }
-                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) cell.classList.add('today');
-                calendarGrid.appendChild(cell);
+                globalAgendamentos = novosAgendamentos;
+                renderCalendar();
+                loader.classList.add('hidden');
+                content.classList.remove('hidden');
+            } catch (e) {
+                loader.classList.add('hidden');
+                content.classList.remove('hidden');
+                renderCalendar();
             }
-            const todayMY = new Date(today.getFullYear(), today.getMonth(), 1);
-            const displayMY = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-            prevBtn.disabled = displayMY <= todayMY;
-            nextBtn.disabled = displayMY >= new Date(2026, 11, 1);
         }
 
-        prevBtn.onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
-        nextBtn.onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
-        fetchData();
+        function changeMonth(dir) {
+            const actualDate = new Date();
+            const actualMonth = actualDate.getMonth();
+            const actualYear = actualDate.getFullYear();
+            let nextM = currentMonth + dir;
+            let nextY = currentYear;
+            if (nextM < 0) { nextM = 11; nextY--; }
+            if (nextM > 11) { nextM = 0; nextY++; }
+            
+            if (nextY < actualYear || (nextY === actualYear && nextM < actualMonth)) return;
+            if (nextY > actualYear) return;
+            
+            const grid = document.getElementById('calendarGrid');
+            if (grid) {
+                grid.style.transform = dir > 0 ? 'translateX(-100%)' : 'translateX(100%)';
+                grid.style.opacity = '0';
+                
+                setTimeout(() => {
+                    currentMonth = nextM; 
+                    currentYear = nextY;
+                    renderCalendar();
+                    grid.style.transition = 'none'; 
+                    grid.style.transform = dir > 0 ? 'translateX(100%)' : 'translateX(-100%)';
+                    
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            grid.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease';
+                            grid.style.transform = 'translateX(0)';
+                            grid.style.opacity = '1';
+                        });
+                    });
+                }, 150);
+            } else {
+                currentMonth = nextM; currentYear = nextY;
+                renderCalendar();
+            }
+        }
+
+        function getToyStockForDate(toyId, dateStr) {
+            const toyBase = TOYS_DB.find(t => t.id === toyId);
+            const totalReservadoNoDia = (globalAgendamentos[dateStr] || {})[toyId] || 0;
+            return Math.max(0, toyBase.qty - totalReservadoNoDia);
+        }
+
+        function renderToys() {
+            const list = document.getElementById('toyList');
+            const dateStr = normalizeDate(selectedDate);
+            const motorGrandeIds = TOYS_DB.filter(t => t.motorForte).map(t => t.id);
+            const isMotorGrandeBooked = motorGrandeIds.some(id => (globalAgendamentos[dateStr] || {})[id] > 0);
+            const cartHasMotorGrande = cart.some(c => motorGrandeIds.includes(c.id));
+            const selectedMotorId = cart.find(c => motorGrandeIds.includes(c.id))?.id;
+            
+            const dayNum = selectedDate.getDate();
+            const monthNum = selectedDate.getMonth();
+            const yearNum = selectedDate.getFullYear();
+            const isSpecificBlockedDate = (yearNum === 2026 && monthNum === 1 && dayNum < 13);
+            const isAugustBlocked = (yearNum < 2026 || (yearNum === 2026 && monthNum < 7)); 
+
+            // Bloqueio específico: Mini Piscina (6) e Castelinho (7) em 15/03/2026
+            const isMarch15Blocked = (yearNum === 2026 && monthNum === 2 && dayNum === 15);
+
+            let toys = [...TOYS_DB].map(toy => ({ ...toy, availableQty: getToyStockForDate(toy.id, dateStr) }));
+            const ageF = document.getElementById('ageFilter').value;
+            const sort = document.getElementById('sortFilter').value;
+            if (ageF !== 'all') toys = toys.filter(t => t.age === ageF.replace('-', ''));
+            if (sort === 'az') toys.sort((a,b) => a.name.localeCompare(b.name));
+            else toys.sort((a,b) => a.relevance - b.relevance);
+            const pl = getPriceLevel(selectedDate);
+            let mult = pl==='$' ? 0.8 : (pl==='$$$' ? 1.2 : (pl==='$$$$' ? 1.6 : 1.0));
+            list.innerHTML = '';
+            toys.forEach(toy => {
+                const inCart = cart.find(c => c.id === toy.id) || { qty: 0 };
+                const isBlockedByDate = isSpecificBlockedDate && [4, 6].includes(toy.id);
+                const isEscorregaBlocked = toy.id === 9 && isAugustBlocked;
+                const isItemMarch15Blocked = isMarch15Blocked && (toy.id === 6 || toy.id === 7);
+
+                let isBlocked = (toy.availableQty <= 0 && inCart.qty === 0) || 
+                                (toy.motorForte && (isMotorGrandeBooked || (cartHasMotorGrande && toy.id !== selectedMotorId))) ||
+                                isBlockedByDate || isEscorregaBlocked || isItemMarch15Blocked;
+
+                let price = (toy.category === 'mesa_comer') ? toy.price : toy.price * mult;
+                
+                let ageColorClass = 'bg-blue-500'; 
+                if (toy.age === 'L') ageColorClass = 'bg-green-500'; 
+                else if (toy.age === '14') ageColorClass = 'bg-orange-500'; 
+
+                const card = document.createElement('div');
+                card.className = `toy-card flex p-4 relative ${isBlocked ? 'disabled' : ''}`;
+                const processedPhoto = toy.photo.includes('dropbox.com') ? toy.photo.replace('dl=0', 'raw=1') : toy.photo;
+                card.innerHTML = `
+                    <div class="w-20 h-20 rounded-xl overflow-hidden mr-4 shrink-0 bg-slate-100 flex items-center justify-center relative img-skeleton">
+                        <img src="${processedPhoto}" class="w-full h-full object-cover opacity-0 transition-opacity duration-300" onload="this.classList.remove('opacity-0'); this.parentElement.classList.remove('img-skeleton')" onerror="this.src='https://via.placeholder.com/150?text=Indispon%C3%ADvel'; this.classList.remove('opacity-0'); this.parentElement.classList.remove('img-skeleton')"><div class="age-badge ${ageColorClass} font-bold Bird Bird Bird Bird Bird">${toy.age}</div>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-slate-800 text-sm leading-tight uppercase">${toy.name}</h4>
+                        <p class="text-[10px] text-slate-400 mt-1 uppercase font-semibold">${toy.size}</p>
+                        <p class="${mult < 1.0 && toy.category !== 'mesa_comer' ? 'text-green-500' : 'text-[#003399]'} font-bold mt-1">R$ ${price.toLocaleString('pt-BR', {minimumFractionDigits: 0})}</p>
+                        <div class="flex items-center mt-2 gap-3 Bird">
+                            <button onclick="changeQty(${toy.id}, -1)" class="w-8 Bird h-8 Bird rounded-full Bird bg-slate-50 flex items-center justify-center Bird text-slate-400 Bird Bird Bird border border-slate-100 font-bold">-</button>
+                            <span class="font-bold Bird text-sm w-4 Bird text-center">${inCart.qty}</span>
+                            <button onclick="changeQty(${toy.id}, 1)" class="w-8 Bird h-8 Bird rounded-full Bird bg-[#003399] text-white Bird flex items-center justify-center font-bold">+</button>
+                        </div>
+                    </div>`;
+                list.appendChild(card);
+            });
+        }
+
+        function changeQty(id, delta) {
+            const dateStr = normalizeDate(selectedDate);
+            const toy = TOYS_DB.find(t => t.id === id);
+            const realStockAvailable = getToyStockForDate(toy.id, dateStr);
+            let item = cart.find(c => c.id === id);
+            if (!item && delta > 0) { 
+                if(realStockAvailable > 0) { 
+                    cart.push({ ...toy, qty: 1 }); 
+                    showToast("Adicionado ao carrinho"); 
+                } 
+            }
+            else if (item) {
+                let oldQty = item.qty;
+                item.qty = Math.max(0, Math.min(item.qty + delta, realStockAvailable));
+                if (item.qty > oldQty) showToast("Adicionado ao carrinho");
+                if (item.qty < oldQty) showToast("Retirado do carrinho");
+                if (item.qty === 0) cart = cart.filter(c => c.id !== id);
+            }
+            renderToys(); updateSummary();
+        }
+
+        function checkAvailabilityForDays(daysCount) {
+            let start = new Date(selectedDate);
+            let conflicts = [];
+            for (let i = 1; i < daysCount; i++) {
+                let checkDate = new Date(start);
+                checkDate.setDate(start.getDate() + i);
+                let dateStr = normalizeDate(checkDate);
+                cart.forEach(item => {
+                    let stock = getToyStockForDate(item.id, dateStr);
+                    if (stock < item.qty) conflicts.push({ name: item.name, date: dateStr });
+                });
+            }
+            return conflicts;
+        }
+
+        function updateSummary() {
+            let totalBrinquedos = 0;
+            let seasonalOriginalSum = 0; 
+            const pl = getPriceLevel(selectedDate);
+            let plMult = pl==='$' ? 0.8 : (pl==='$$$' ? 1.2 : (pl==='$$$$' ? 1.6 : 1.0));
+            let countCombo = 0;
+            let comboText = "";
+            let specificComboSavings = 0;
+            const isMEUANO24 = couponCode === "MEUANO24" && couponIsValid;
+
+            const hasCombo = (ids) => ids.every(id => cart.some(c => c.id === id && c.qty >= 1));
+
+            // Lógica de Match Único para Combos
+            let comboApplied = false;
+
+            // 1. COMBO ECONOMIA: Escorrega Premium (4) + Pula Pula Médio (2) -> 490 (Economia 100)
+            if(!comboApplied && hasCombo([4, 2])) { 
+                specificComboSavings = 100; 
+                comboText = "COMBO ECONOMIA ATIVADO!"; 
+                comboApplied = true;
+            }
+            // 2. COMBO BABY: Mini Piscina de Bolinhas (6) + Area Baby (5) -> 250 (Economia 60)
+            if(!comboApplied && hasCombo([5, 6])) { 
+                specificComboSavings = 60; 
+                comboText = "COMBO BABY ATIVADO!"; 
+                comboApplied = true;
+            }
+            // 3. COMBO +DIVERSÃO: Piscina de Bolinhas (3) + Castelinho Pula Pula (7) -> 360 (Economia 50)
+            if(!comboApplied && hasCombo([3, 7])) { 
+                specificComboSavings = 50; 
+                comboText = "COMBO +DIVERSÃO ATIVADO!"; 
+                comboApplied = true;
+            }
+
+            // Calculando total base
+            cart.forEach(i => {
+                let currentNormalPrice = (i.category === 'mesa_comer') ? i.price : i.price * plMult;
+                seasonalOriginalSum += currentNormalPrice * i.qty;
+                let priceItem = currentNormalPrice;
+                if (couponCode === "MIXCASTLE" && i.id === 7) priceItem = 180;
+                
+                if (isMEUANO24) {
+                    const prices2024 = {1:120,2:150,3:150,4:300,5:100,6:150,7:150,9:300,10:150,11:150,13:15};
+                    if (prices2024[i.id]) priceItem = prices2024[i.id];
+                }
+                totalBrinquedos += priceItem * i.qty;
+                if (i.category !== 'mesa_comer') countCombo += i.qty;
+            });
+
+            totalBrinquedos -= specificComboSavings;
+
+            // NOVA LÓGICA: PROMO50 (Paga metade no mais barato ao levar 2)
+            let promo50Discount = 0;
+            
+            if (isPromo50Active && cart.length >= 2) {
+                // Encontrar o brinquedo mais barato no carrinho (considerando preço sazonal)
+                let toysOnly = cart.filter(i => i.category !== 'mesa_comer');
+                if (toysOnly.length >= 2) {
+                    let cheapestToy = toysOnly.reduce((prev, curr) => (prev.price < curr.price) ? prev : curr);
+                    promo50Discount = (cheapestToy.price * plMult) / 2;
+                    totalBrinquedos -= promo50Discount;
+                }
+            }
+
+            const badge = document.getElementById('discountBadge');
+            if (promo50Discount > 0) {
+                badge.innerText = `PROMOÇÃO 50% OFF APLICADA!`;
+                badge.classList.remove('hidden', 'bg-green-500');
+                badge.classList.add('bg-red-600');
+            } else if (specificComboSavings > 0) {
+                badge.innerText = `${comboText} - R$ ${specificComboSavings} OFF`;
+                badge.classList.remove('hidden', 'bg-red-600');
+                badge.classList.add('bg-green-500');
+            } else if (countCombo >= 2 && !isMEUANO24) {
+                const perc = pl === '$' ? 5 : 10;
+                badge.innerText = `DESCONTO DE ${perc}% APLICADO!`;
+                badge.classList.remove('hidden', 'bg-red-600');
+                badge.classList.add('bg-green-500');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            let multDaysFactor = [1, 1, 1.7, 2.3, 2.8, 3.2][extraDays] || 1;
+            let totalFinal = totalBrinquedos * multDaysFactor;
+
+            let startInt = parseInt(startTime.split(':')[0]) || 0;
+            let isNextDay = endTime === "NEXT_DAY";
+            let endInt = isNextDay ? 22 : (parseInt(endTime.split(':')[0]) || 0);
+            let duration = endInt - startInt;
+            let durationExtra = (duration > 6) ? (duration - 6) * 5 : 0;
+            let nextDayExtra = isNextDay ? 10 : 0;
+            let baseExtras = durationExtra + nextDayExtra + (monitorsCount * monitorHours * 30);
+
+            totalFinal += baseExtras;
+
+            let deliveryFee = 0;
+            const onlyMesas = cart.length === 1 && cart[0].id === 13;
+            if (selectedBairro) {
+                deliveryFee = BAIRROS[selectedBairro];
+                if (onlyMesas) {
+                    if (deliveryFee === 0) deliveryFee = 10;
+                    if (selectedBairro === "Ervino") deliveryFee = 25;
+                }
+            }
+            if (couponCode === "MEUCLUB" && deliveryFee > 0) deliveryFee = Math.max(0, deliveryFee - 15);
+            totalFinal += (insuranceEnabled ? 9.90 : 0) + deliveryFee;
+            
+            if (couponIsValid && !isMEUANO24) {
+                if (couponCode === "FIVEHUND") totalFinal *= 0.95;
+                else if (couponCode === "DEZZOFF") totalFinal *= 0.90;
+                else if (["UIOU321", "3U2O1IU", "U3O1I2U", "21O3OI3", "12O3123", "OU1IO33", "13O2I3U", "0132139", "MEGAPROMO30"].includes(couponCode)) totalFinal *= 0.70;
+            }
+
+            let referencePrice = (seasonalOriginalSum * multDaysFactor) + baseExtras + (selectedBairro ? BAIRROS[selectedBairro] : 0) + (insuranceEnabled ? 9.90 : 0);
+            const savings = Math.max(0, referencePrice - totalFinal);
+
+            document.getElementById('totalValueText').innerText = "R$ " + totalFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            document.getElementById('pixFinalTotalDisplay').innerText = "R$ " + totalFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            
+            const savingsEl = document.getElementById('savingsText');
+            if (savings > 0.5) {
+                savingsEl.innerText = `Você economizou R$ ${savings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                savingsEl.classList.remove('hidden');
+            } else savingsEl.classList.add('hidden');
+
+            const delEl = document.getElementById('deliveryText');
+            if (selectedBairro) delEl.innerHTML = deliveryFee === 0 ? '<span class="text-green-500 font-bold">FRETE GRÁTIS</span>' : `TAXA DE ENTREGA R$ ${deliveryFee.toFixed(2).replace('.',',')} REAIS`;
+            else delEl.innerText = "";
+
+            document.getElementById('mainBtn').disabled = cart.length === 0;
+
+            if (currentStep === 'summary') {
+                const detailList = document.getElementById('orderDetailList');
+                if (detailList) {
+                    let itemsHtml = cart.map(i => {
+                        let p = i.price;
+                        if (isMEUANO24) {
+                             const prices2024 = {1:120,2:150,3:150,4:300,5:100,6:150,7:150,9:300,10:150,11:150,13:15};
+                             p = prices2024[i.id] || p;
+                        } else {
+                             const plvl = getPriceLevel(selectedDate);
+                             let m = plvl==='$' ? 0.8 : (plvl==='$$$' ? 1.2 : (plvl==='$$$$' ? 1.6 : 1.0));
+                             if (i.category !== 'mesa_comer') p *= m;
+                        }
+                        return `<div class='flex justify-between text-slate-800 font-bold py-0.5 text-[10px] uppercase'><span>${i.qty}x ${i.name}</span><span>R$ ${(p * i.qty * extraDays).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></div>`;
+                    }).join('');
+                    itemsHtml += `<div class='border-t border-slate-200 mt-2 pt-2 flex justify-between text-[9px] font-bold text-slate-400 uppercase tracking-tighter'><span>VALOR ORIGINAL SEM CUPOM</span><span>R$ ${referencePrice.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></div>`;
+                    itemsHtml += `<div class='flex justify-between text-[9px] font-bold text-green-500 uppercase tracking-tighter'><span>ECONOMIA TOTAL</span><span>- R$ ${savings.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></div>`;
+                    detailList.innerHTML = itemsHtml;
+                }
+            }
+
+            const backBtn = document.getElementById('backBtn');
+            if (backBtn) backBtn.classList.toggle('hidden', currentStep === 'toys');
+        }
+
+        async function sendToSheet() {
+            if (!API_URL) return;
+            const totalStr = document.getElementById('totalValueText').innerText.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+            const totalTotal = parseFloat(totalStr);
+            const valorPorDia = totalTotal / extraDays;
+            const valorPorDiaFormatado = "R$ " + valorPorDia.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            let discountPercent = 0;
+            const pl = getPriceLevel(selectedDate);
+            let countCombo = cart.filter(i => i.category !== 'mesa_comer').reduce((acc, i) => acc + i.qty, 0);
+            if (countCombo >= 2 && couponCode !== "MEUANO24") {
+                discountPercent += (pl === '$' ? 5 : 10);
+            }
+            if (couponIsValid && couponCode !== "MEUANO24") {
+                if (couponCode === "FIVEHUND") discountPercent += 5;
+                else if (couponCode === "DEZZOFF") discountPercent += 10;
+                else if (["UIOU321", "3U2O1IU", "U3O1I2U", "21O3OI3", "12O3123", "OU1IO33", "13O2I3U", "0132139", "MEGAPROMO30"].includes(couponCode)) discountPercent += 30;
+            }
+
+            if (TELEGRAM_TOKEN && TELEGRAM_CHAT_ID) {
+                const itemsList = cart.map(item => `• ${item.qty}x ${item.name}`).join("\n");
+                const telegramMsg = `🚀 *NOVA RESERVA RECEBIDA*\n\n👤 *Cliente:* ${userName}\n📱 *WhatsApp:* ${userZap}\n\n📅 *Data Inicial:* ${normalizeDate(selectedDate)}\n🔢 *Duração:* ${extraDays} dia(s)\n⏰ *Horário:* ${startTime} às ${endTime === 'NEXT_DAY' ? 'Dia Seg.' : endTime}\n\n📍 *Bairro:* ${selectedBairro}\n🏠 *Rua:* ${userRua}, ${userNum}\n\n📦 *Brinquedos:*\n${itemsList}\n\n💰 *Valor Total:* R$ ${totalTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n💳 *Pagamento:* ${paymentMethod}\n🎫 *Cupom:* ${couponCode || 'Nenhum'}\n📉 *Desconto Total:* ${discountPercent}%\n\n⚙️ _Detalhes enviados para a Planilha_`;
+                try {
+                    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: telegramMsg, parse_mode: 'Markdown' })
+                    });
+                } catch (e) { console.error("Erro Telegram:", e); }
+            }
+
+            for (let i = 0; i < extraDays; i++) {
+                let dataLinha = new Date(selectedDate);
+                dataLinha.setDate(selectedDate.getDate() + i);
+                const randomLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                const payload = {
+                    id: randomLetter,
+                    evento: normalizeDate(dataLinha) || "N/A",
+                    diaAnt: deliveryPreviousDay ? "Sim" : "Não",
+                    inicio: startTime || "N/A",
+                    termino: (endTime === "NEXT_DAY" ? "Dia Seg." : endTime) || "N/A",
+                    nome: userName || "N/A",
+                    whatsapp: userZap || "N/A",
+                    bairro: selectedBairro || "N/A",
+                    rua: userRua || "N/A",
+                    num: userSN ? "S/N" : (userNum || "N/A"),
+                    pontoRef: userDetails || "N/A",
+                    itens: cart.map(item => `${item.qty}x ${item.name}`).join("\n"),
+                    cobert: piscinaCovered || "N/A",
+                    monitores: monitorsCount > 0 ? `${monitorsCount} Mon. (${monitorHours}h)` : "Não",
+                    extensao: Object.entries(socketDistances).map(([id, dist]) => {
+                        const toy = TOYS_DB.find(t => t.id == id);
+                        return toy ? `${toy.name}: ${dist}m` : `${dist}m`;
+                    }).join("\n") || "N/A",
+                    seguro: insuranceEnabled ? "Sim" : "Não",
+                    nota: needsInvoice ? "Sim" : "Não",
+                    diaria: extraDays || "N/A",
+                    pago: "0,00",
+                    total: valorPorDiaFormatado,
+                    obs: i > 0 ? `Dia ${i+1} de aluguel` : `Pagamento: ${paymentMethod} | Desconto: ${discountPercent}% | Cupom: ${couponCode || 'N/A'}`,
+                    cnpj: userCNPJ || "N/A",
+                    cep: userCEP || "N/A",
+                    referral: referralSource === "OUTROS" ? referralOther : referralSource
+                };
+
+                const localData = JSON.parse(localStorage.getItem('encanto_reservas') || '[]');
+                localData.push({ ...payload, timestamp: new Date().getTime() });
+                localStorage.setItem('encanto_reservas', JSON.stringify(localData));
+
+                try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); } catch (e) { console.error("Erro Sheets:", e); }
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('cartToast');
+            if (t) { t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+        }
+
+        function openSheet(id) { 
+            const overlay = document.getElementById('overlay'); 
+            const sheet = document.getElementById(id); 
+            if(overlay) overlay.style.display = 'block'; 
+            if(sheet) { 
+                sheet.classList.add('open'); 
+                sheet.scrollTop = 0; 
+                sheet.style.transform = ''; 
+            } 
+            document.body.style.overflow = 'hidden'; 
+            const mainBtn = document.getElementById('mainBtn');
+            if (mainBtn) mainBtn.innerText = currentStep === 'summary' ? 'FINALIZAR' : 'Continuar';
+            updateSummary(); 
+        }
+
+        function closeSheet() { 
+            document.querySelectorAll('.bottom-sheet').forEach(s => {
+                s.classList.remove('open');
+                s.style.transform = ''; 
+            }); 
+            document.getElementById('overlay').style.display = 'none'; 
+            document.body.style.overflow = 'auto'; 
+        }
+
+        function handleStreetInput(i) {
+            let val = i.value;
+            let vFormatted = val.toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+            i.value = vFormatted; window.userRua = vFormatted;
+            const ghost = document.getElementById('userRuaGhost');
+            const container = document.getElementById('streetSuggestionsContainer');
+            if (vFormatted.length < 3) { if(ghost) ghost.value = ""; container.style.display = 'none'; return; }
+            let searchVal = normalizeString(val.replace(/^(rua|av|avenida|travessa|servidao|praça|r\.|av\.)\s+/i, ""));
+            const match = streetList.find(s => normalizeString(s).includes(searchVal));
+            if (match) {
+                if (normalizeString(match).startsWith(searchVal)) { if(ghost) ghost.value = val + match.substring(searchVal.length + (val.length - searchVal.length)); } 
+                else { if(ghost) ghost.value = ""; }
+                const matches = streetList.filter(s => normalizeString(s).includes(searchVal)).slice(0, 3);
+                container.innerHTML = matches.map(s => `<div class="suggestion-item" onclick="selectStreet('${s}')">${s}</div>`).join('');
+                container.style.display = 'block';
+            } else { if(ghost) ghost.value = ""; container.style.display = 'none'; }
+        }
+
+        function selectStreet(s) { window.userRua = s; const inp = document.getElementById('userRua'); const ghost = document.getElementById('userRuaGhost'); if(inp) inp.value = s; if(ghost) ghost.value = ""; document.getElementById('streetSuggestionsContainer').style.display = 'none'; }
+        function handleStreetKeydown(e) { const ghost = document.getElementById('userRuaGhost'); if ((e.key === 'Enter' || e.key === 'Tab' || e.key === 'ArrowRight') && ghost && ghost.value !== "") { e.preventDefault(); selectStreet(ghost.value); } }
+        function formatName(i) { let v = i.value.replace(/[0-9]/g, "").toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase()); i.value = v; userName = v; }
+        function maskCNPJ(i) { let v = i.value.replace(/\D/g, "").slice(0, 14); let m = ""; if (v.length > 0) m = v.substring(0, 2); if (v.length > 2) m += "." + v.substring(2, 5); if (v.length > 5) m += "." + v.substring(5, 8); if (v.length > 8) m += "/" + v.substring(8, 12); if (v.length > 12) m += "-" + v.substring(12, 14); i.value = m; userCNPJ = m; }
+        function maskCEP(i) { let v = i.value.replace(/\D/g, "").slice(0, 8); let m = ""; if (v.length > 0) m = v.substring(0, 2); if (v.length > 2) m += "." + v.substring(2, 5); if (v.length > 5) m += "-" + v.substring(5, 8); i.value = m; userCEP = m; }
+        function maskZap(i) { let v = i.value.replace(/\D/g, "").slice(0, 11); let m = v.length > 0 ? "(" + v.substring(0, 2) : ""; if (v.length > 2) m += ") " + v.substring(2, 7); if (v.length > 7) m += "-" + v.substring(7, 11); i.value = m; userZap = m; }
+        
+        function checkCoupon(val) { 
+            if (couponIsValid) return; 
+            let code = val.toUpperCase().trim(); 
+            if (code === "MEUANO24") {
+                const now = new Date();
+                const expiry = new Date(2026, 0, 10, 23, 59, 59); 
+                if (now > expiry) { showToast("Este cupom expirou!"); return; }
+            }
+            if (COUPONS_DB[code]) { 
+                couponCode = code; 
+                couponIsValid = true; 
+                updateSummary(); 
+                renderForm(); 
+                openSheet('formSheet'); 
+            } 
+        }
+
+        function prevStep() {
+            const steps = ['toys', 'id', 'address', 'party', 'details', 'summary'];
+            const idx = steps.indexOf(currentStep);
+            if (idx > 0) {
+                const prev = steps[idx - 1];
+                currentStep = prev;
+                if (prev === 'toys') {
+                    closeSheet();
+                    setTimeout(() => { openSheet('toySheet'); updateSummary(); }, 200);
+                } else {
+                    renderForm();
+                    updateSummary();
+                }
+            }
+        }
+
+        function nextStep() {
+            if (currentStep === 'id') {
+                if (!userName.trim()) { showToast("Por favor, informe seu nome"); return; }
+                if (userZap.length < 15) { showToast("Informe o WhatsApp completo"); return; }
+            }
+            if (currentStep === 'address') {
+                if (!selectedBairro) { showToast("Selecione o bairro"); return; }
+                if (!userRua.trim()) { showToast("Informe o nome da rua"); return; }
+                if (!userSN && !userNum.trim()) { showToast("Informe o número ou marque 'Sem número'"); return; }
+                if (!userDetails.trim()) { showToast("Informe detalhes da casa para ajudar na entrega"); return; }
+            }
+            if (currentStep === 'party') {
+                if (extraDays > 1) {
+                    const conflicts = checkAvailabilityForDays(extraDays);
+                    if (conflicts.length > 0) {
+                        const conflict = conflicts[0];
+                        const modal = document.createElement('div');
+                        modal.className = "fixed inset-0 bg-black/60 z-[400] flex items-center justify-center p-6";
+                        modal.innerHTML = `<div class="bg-white p-8 rounded-3xl text-center shadow-2xl max-w-xs font-bold"><i class="fas fa-calendar-times text-red-500 text-4xl mb-4"></i><p class="font-bold text-slate-800 uppercase text-sm">Não é possível reservar ${extraDays} dias!</p><p class="text-slate-500 text-xs mt-3 leading-relaxed uppercase">O brinquedo <span class="text-red-500">${conflict.name}</span> já está totalmente reservado no dia <span class="text-[#003399]">${conflict.date}</span>.</p><button onclick="this.parentElement.parentElement.remove()" class="mt-6 w-full btn-primary py-3 rounded-xl uppercase font-bold">Entendido</button></div>`;
+                        document.body.appendChild(modal);
+                        return;
+                    }
+                }
+            }
+            if (currentStep === 'details') {
+                const needsPower = cart.filter(t=>t.power || t.id === 10);
+                if (needsPower.length > 0) {
+                    const filled = Object.values(socketDistances).some(d => d && d.trim() !== "");
+                    if (!filled) { showToast("Informe a distância da tomada para pelo menos um brinquedo"); return; }
+                }
+            }
+            const steps = ['toys', 'id', 'address', 'party', 'details', 'summary'];
+            const idx = steps.indexOf(currentStep);
+            if (currentStep === 'toys') { if (cart.length === 0) { showToast("Selecione um brinquedo primeiro!"); return; } }
+            if (currentStep === 'summary') { sendToSheet(); document.getElementById('pixPopup').classList.remove('hidden'); return; }
+            const next = steps[idx + 1];
+            if (next) { currentStep = next; closeSheet(); setTimeout(() => { renderForm(); openSheet('formSheet'); }, 200); }
+        }
+
+        function renderForm() {
+            const container = document.getElementById('formContent');
+            if(!container) return;
+            const h = (t) => `<h3 class="text-xl font-bold text-[#003399] uppercase mb-6">${t}</h3>`;
+            const likedLabel = (t) => `<label class="text-[10px] font-bold text-[#003399] uppercase ml-1 mb-1 block">${t}</label>`;
+            const safetyMsg = `<div class="mt-8 pt-6 border-t border-slate-100 flex items-start gap-3 opacity-60"><i class="fas fa-shield-alt text-blue-500 text-sm mt-0.5"></i><p class="text-[10px] text-slate-500 font-bold leading-relaxed">As informações fornecidas são utilizadas apenas para a realização da sua reserva e ficam totalmente protegidas.</p></div>`;
+
+            if (currentStep === 'id') {
+                container.innerHTML = `${h('CONTATO')}<div class="mb-4">${likedLabel('Nome')}<input type='text' value='${userName}' placeholder='Primeiro nome' oninput='formatName(this)' maxlength='18' class='w-full p-5 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-blue-500 font-bold'></div>
+                <div class="mb-4">
+                    <div class="flex items-center gap-1 mb-1 ml-1"><i class="fab fa-whatsapp text-green-500 text-xs"></i><label class="text-[10px] font-bold text-[#003399] uppercase">WhatsApp</label></div>
+                    <input type='tel' value='${userZap}' placeholder='(xx) xxxxx-xxxx' oninput='maskZap(this)' class='w-full p-5 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-blue-500 font-bold'>
+                </div>${safetyMsg}<div class="h-40"></div>`;
+            }
+            else if (currentStep === 'address') {
+                container.innerHTML = `${h('Endereço')}<select onchange='selectedBairro=this.value;updateSummary()' class='w-full p-5 bg-slate-50 rounded-2xl mb-4 font-bold outline-none'><option value=''>Selecione o Bairro</option>${Object.keys(BAIRROS).map(b => `<option value="${b}" ${selectedBairro===b?'selected':''} ${b === 'Vila da Glória' ? 'disabled' : ''}>${b}${b === 'Vila da Glória' ? ' (INDISPONÍVEL)' : ''}</option>`)}</select><div class="relative mb-4"><input type="text" id="userRuaGhost" class="w-full p-5 bg-slate-50 rounded-2xl absolute inset-0 text-slate-300 pointer-events-none font-bold outline-none" disabled><input type='text' id='userRua' value='${userRua}' placeholder='Nome da Rua' oninput='handleStreetInput(this)' onkeydown="handleStreetKeydown(event)" class='w-full p-5 bg-transparent rounded-2xl relative font-bold outline-none'></div><div id='streetSuggestionsContainer'></div><div class='flex gap-2 mb-4'><input type='text' value='${userSN ? "S/N" : userNum}' maxlength='4' placeholder='N°' oninput='this.value=this.value.replace(/\\D/g,""); userNum=this.value' class='w-28 p-5 bg-slate-50 rounded-2xl font-bold outline-none ${userSN ? "opacity-50" : ""}'> <div class='flex items-center gap-2 p-3 bg-slate-50 rounded-2xl flex-1 cursor-pointer' onclick='userSN=!userSN;renderForm()'><div class='toggle-switch ${userSN?"on":""}'><div class='toggle-knob'></div></div><span class='text-[10px] font-bold text-slate-600 uppercase'>SEM NÚMERO</span></div></div><input type='text' value='${userDetails}' placeholder='Cor da casa, muro, etc' oninput='userDetails=this.value' class='w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none'>${safetyMsg}<div class="h-40"></div>`;
+            }
+            else if (currentStep === 'party') {
+                const hours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"];
+                const startInt = parseInt(startTime.split(':')[0]);
+                const isNextDay = endTime === "NEXT_DAY";
+                const endInt = isNextDay ? 22 : (parseInt(endTime.split(':')[0]) || 0);
+                const duration = endInt - startInt;
+                const extraPriceVal = (duration > 6 ? (duration - 6) * 5 : 0) + (isNextDay ? 10 : 0);
+                container.innerHTML = `${h('Duração')}<div class='flex gap-2 mb-6'>${[1,2,3,4,5].map(d => {
+                    let pct = "";
+                    if(d===2) pct = "15% OFF"; if(d===3) pct = "23% OFF"; if(d===4) pct = "30% OFF"; if(d===5) pct = "36% OFF";
+                    return `<button onclick="extraDays=${d};renderForm();updateSummary()" class='flex-1 Bird py-3 rounded-xl font-bold border-2 ${extraDays===d?"border-blue-600 bg-blue-50 text-blue-800":"border-slate-100 text-slate-800"} flex flex-col items-center'><span class='text-lg'>${d}d</span>${pct ? `<span class="text-[8px] text-green-600 font-bold">${pct}</span>`:""}</button>`;
+                }).join('')}</div>
+                <div class='flex gap-3 mb-2'>
+                    <div class='flex-1'>${likedLabel('Início')}<select onchange="startTime=this.value;renderForm();updateSummary()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">${hours.map(h => `<option value="${h}" ${startTime===h?'selected':''}>${h}</option>`).join('')}</select></div>
+                    <div class='flex-1'>${likedLabel('Término')}<select onchange="endTime=this.value;renderForm();updateSummary()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">${hours.filter(h => parseInt(h.split(':')[0]) > startInt).map(h => `<option value="${h}" ${endTime===h?'selected':''}>${h}</option>`).join('')}<option value="NEXT_DAY" ${endTime==='NEXT_DAY'?'selected':''}>DIA SEG.</option></select></div>
+                </div>
+                <div class="text-center mb-6"><p class="text-[10px] uppercase tracking-tight text-blue-500 font-bold">${extraPriceVal > 0 ? `+ R$ ${extraPriceVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})} EXTRA` : '6 Horas inclusas / +5h por hora extra'}</p></div>
+                <div class='p-5 bg-blue-50 rounded-2xl mb-4 flex justify-between cursor-pointer' onclick='deliveryPreviousDay=!deliveryPreviousDay;renderForm()'><div class="flex items-center gap-3"><div class='toggle-switch ${deliveryPreviousDay?"on":""}'><div class='toggle-knob'></div></div><div class="flex flex-col"><p class='text-[10px] font-bold text-blue-800 uppercase leading-tight'>ENTREGAR DIA ANTERIOR (GRATIS)</p><p class='text-[8px] text-blue-600 font-medium uppercase leading-tight'>NÃO É CERTEZA MAS UMA POSSIBILIDADE</p></div></div></div>${safetyMsg}<div class="h-40"></div>`;
+            }
+            else if (currentStep === 'details') {
+                const hasPiscina = cart.some(i => i.id === 3 || i.id === 9);
+                container.innerHTML = `${h('Preferências')}<div class='p-6 bg-slate-50 rounded-3xl mb-8'>
+                ${hasPiscina ? `<p class='text-[11px] font-bold text-[#003399] mb-4 uppercase text-center'>A piscina fica coberta?</p><div class='flex gap-2 mb-10'>${["sim","não"].map(o => `<button onclick="piscinaCovered='${o}';renderForm()" class='flex-1 py-2 rounded-xl border-2 ${piscinaCovered===o?"border-blue-600 bg-blue-600 text-white":"bg-white text-slate-800 font-bold"}'>${o.toUpperCase()}</button>`).join('')}</div>` : ''}
+                <p class='text-[11px] font-bold text-[#003399] mb-1 uppercase text-center'>Monitor? (R$ 30,00 por hora)</p>
+                <div class='flex gap-2 mb-4'>${[0,1,2].map(m => `<button onclick="monitorsCount=${m};renderForm();updateSummary()" class='flex-1 Bird py-3 rounded-xl border-2 ${monitorsCount===m?"border-blue-600 bg-blue-600 text-white":"bg-white font-bold"}'>${m===0?'NÃO':m+' MON.'}</button>`).join('')}</div>
+                ${monitorsCount > 0 ? `<div class="mt-4">${likedLabel('Quantas horas?')}<select onchange="monitorHours=parseInt(this.value);updateSummary()" class="w-full p-4 bg-white rounded-xl font-bold outline-none Bird">${[2,3,4,5,6,7,8].map(h => `<option value="${h}" ${monitorHours===h?'selected':''}>${h} HORAS</option>`).join('')}</select></div>` : ''}
+                </div>
+                ${cart.filter(t=>t.power || t.id === 10).length > 0 ? `<div class='mb-8'><p class='text-[11px] font-bold text-[#003399] mb-4 uppercase text-center'>Qual a distancia da tomada mais próxima?</p>${cart.filter(t=>t.power || t.id === 10).map(t => `<div class="mb-4 bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between"><p class="text-[10px] font-bold text-[#003399] uppercase mr-4">${t.name}</p><div class="flex items-center gap-2"><input type="tel" maxlength="2" placeholder="0" value="${socketDistances[t.id] || ''}" oninput="this.value=this.value.replace(/\\D/g,''); socketDistances[${t.id}]=this.value" class="w-12 p-3 bg-slate-50 rounded-xl outline-none font-bold text-sm text-center border-2 focus:border-blue-500 Bird"><span class="text-[10px] font-bold text-slate-400">metros</span></div></div>`).join('')}</div>` : ''}${safetyMsg}<div class="h-40"></div>`;
+            }
+            else if (currentStep === 'summary') {
+                container.innerHTML = `${h('Finalizar')}<div class='p-6 bg-slate-50 rounded-[24px] mb-4'>${likedLabel('Tipo de pagamento')}<select onchange="paymentMethod=this.value;renderForm()" class="w-full p-4 mb-2 bg-white rounded-xl font-bold outline-none shadow-inner"><option value="Pix" ${paymentMethod === 'Pix' ? 'selected' : ''}>Pix</option><option value="Dinheiro Físico" ${paymentMethod === 'Dinheiro Físico' ? 'selected' : ''}>Dinheiro Físico</option><option value="Cartão de crédito" ${paymentMethod === 'Cartão de crédito' ? 'selected' : ''}>Cartão de crédito</option><option value="Cartão de débito" ${paymentMethod === 'Cartão de débito' ? 'selected' : ''}>Cartão de débito</option></select><div class="flex items-start gap-2 mb-4 bg-blue-50/50 p-3 rounded-xl"><i class="fas fa-smile-beam text-blue-500 mt-0.5 text-xs"></i><p class="text-[10px] font-bold text-blue-900 leading-tight">Fique tranquilo(a)! O acerto final do valor é realizado apenas quando os brinquedos estiverem montadinhos e prontos para a diversão no local!</p></div>${paymentMethod === 'Cartão de crédito' ? `<p class="text-orange-600 text-[10px] font-bold mb-4"><i class="fas fa-info-circle mr-1"></i> tem uma pequena taxa padrão do cartão para 1x, 2x ou mais.</p>` : ''}${likedLabel('Cupom?')}<input type="text" placeholder="CÓDIGO PROMOCIONAL" ${couponIsValid ? 'disabled' : ''} value="${couponCode}" oninput="checkCoupon(this.value)" class="w-full p-4 rounded-xl outline-none font-bold uppercase ${couponIsValid?'border-2 border-green-500 bg-green-50':'bg-white shadow-inner'}">${couponIsValid ? `<p class="text-green-600 text-[10px] font-bold mt-2 Bird"><i class="fas fa-check-circle mr-1"></i> ${COUPONS_DB[couponCode]}</p>` : ''}<div class="mt-8">${likedLabel('Nota Fiscal?')}<div class="flex gap-2 mb-4">${[true,false].map(opt => `<button onclick="needsInvoice=${opt};renderForm()" class="flex-1 py-3 rounded-xl border-2 ${needsInvoice===opt?'border-[#003399] bg-[#003399] text-white':'border-white bg-white text-slate-300'} text-xs font-bold Bird">${opt?'SIM':'NÃO'}</button>`).join('')}</div>${needsInvoice ? `<div class="space-y-4 pt-2"><div>${likedLabel('CNPJ')} <input type="tel" oninput="maskCNPJ(this)" value="${userCNPJ}" placeholder="00.000.000/0000-00" class="w-full p-4 bg-white rounded-xl outline-none font-bold shadow-inner"></div><div>${likedLabel('CEP')} <input type="tel" oninput="maskCEP(this)" value="${userCEP}" placeholder="00.000-000" class="w-full p-4 bg-white rounded-xl outline-none font-bold shadow-inner"></div></div>` : ''}</div></div><div class='p-5 bg-green-50 rounded-3xl mb-4 flex justify-between gap-4 cursor-pointer' onclick='insuranceEnabled=!insuranceEnabled;updateSummary();renderForm()'><div class="flex items-center gap-3"><div class='toggle-switch ${insuranceEnabled?"on":""}'><div class='toggle-knob'></div></div><div class="flex flex-col"><p class='text-[10px] font-bold text-green-800 uppercase leading-tight'>ADICIONAR SEGURO (R$ 9,90 APENAS)</p><p class='text-[8px] text-green-700 font-medium uppercase leading-tight'>Fique isento de reparos de até 300 reais caso o brinquedo seja danificado</p></div></div></div><div class="p-5 bg-slate-100 rounded-3xl border border-slate-200"><div class="mb-4">${likedLabel('Como conheceu a gente?')}<select onchange="referralSource=this.value;renderForm()" class="w-full p-4 bg-white rounded-xl font-bold text-xs outline-none shadow-inner"><option value="" ${referralSource === '' ? 'selected' : ''}>SELECIONE</option><option value="JA SOU CLIENTE" ${referralSource === 'JA SOU CLIENTE' ? 'selected' : ''}>JA SOU CLIENTE</option><option value="MARKETPLACE" ${referralSource === 'MARKETPLACE' ? 'selected' : ''}>MARKETPLACE</option><option value="INSTAGRAM" ${referralSource === 'INSTAGRAM' ? 'selected' : ''}>INSTAGRAM</option><option value="ANUNCIO FACE / INSTA" ${referralSource === 'ANUNCIO FACE / INSTA' ? 'selected' : ''}>ANUNCIO FACE / INSTA</option><option value="GOOGLE / MAPS" ${referralSource === 'GOOGLE / MAPS' ? 'selected' : ''}>GOOGLE / MAPS</option><option value="BANNER / OUTDOOR" ${referralSource === 'BANNER / OUTDOOR' ? 'selected' : ''}>BANNER / OUTDOOR</option><option value="INDICAÇÃO DE AMIGO" ${referralSource === 'INDICAÇÃO DE AMIGO' ? 'selected' : ''}>INDICAÇÃO DE AMIGO</option><option value="INDICAÇÃO DE EMPRESA" ${referralSource === 'INDICAÇÃO DE EMPRESA' ? 'selected' : ''}>INDICAÇÃO DE EMPRESA</option><option value="OUTROS" ${referralSource === 'OUTROS' ? 'selected' : ''}>OUTROS</option></select>${referralSource === 'OUTROS' ? `<input type="text" placeholder="Onde?" oninput="referralOther=this.value" class="w-full p-4 mt-2 bg-white rounded-xl font-bold text-xs border border-blue-100">` : ''}</div><div id="orderDetailList" class="space-y-1"></div></div>${safetyMsg}<div class="h-40"></div>`;
+            }
+            const mainBtn = document.getElementById('mainBtn');
+            if (mainBtn) mainBtn.innerText = currentStep === 'summary' ? 'FINALIZAR' : 'Continuar';
+        }
+
+        function copyPixOnly() {
+            const pixKey = document.getElementById('pixKey').innerText;
+            const tempInput = document.createElement("textarea");
+            tempInput.value = pixKey;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            const btn = document.getElementById('pixBtn');
+            btn.innerText = "COPIADO!";
+            btn.style.backgroundColor = "#22C55E";
+            btn.style.boxShadow = "0 4px 0 #166534";
+            setTimeout(() => { window.location.href = 'reserva.html'; }, 1000); 
+        }
+
+        function initKeyboardNavigation() {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const active = document.activeElement;
+                    if (active.tagName === 'INPUT' || active.tagName === 'SELECT') {
+                        const ghost = document.getElementById('userRuaGhost');
+                        if (active.id === 'userRua' && ghost && ghost.value !== "") return;
+                        e.preventDefault();
+                        const focusables = Array.from(document.querySelectorAll('#formContent input:not([disabled]), #formContent select:not([disabled])'));
+                        const index = focusables.indexOf(active);
+                        if (index > -1 && index < focusables.length - 1) focusables[index + 1].focus();
+                        else nextStep();
+                    }
+                }
+            });
+        }
+
+        function initDragToClose() {
+            const sheets = document.querySelectorAll('.bottom-sheet');
+            sheets.forEach(sheet => {
+                const handleArea = sheet.querySelector('.drag-handle-area');
+                if (!handleArea) return;
+                let startY = 0; let currentY = 0; let isDragging = false;
+                const onStart = (e) => { isDragging = true; startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY; sheet.style.transition = 'none'; };
+                const onMove = (e) => {
+                    if (!isDragging) return;
+                    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                    const deltaY = clientY - startY;
+                    if (deltaY > 0) { currentY = deltaY; sheet.style.transform = `translateY(${deltaY}px)`; }
+                };
+                const onEnd = () => {
+                    if (!isDragging) return; isDragging = false;
+                    sheet.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                    if (currentY > 120) closeSheet();
+                    else sheet.style.transform = 'translateY(0)';
+                    currentY = 0;
+                };
+                handleArea.addEventListener('mousedown', onStart);
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onEnd);
+                handleArea.addEventListener('touchstart', onStart, { passive: true });
+                window.addEventListener('touchmove', onMove, { passive: false });
+                window.addEventListener('touchend', onEnd);
+            });
+        }
+
+        function initCalendarSwipe() {
+            const calendarContent = document.getElementById('calendarContent');
+            const grid = document.getElementById('calendarGrid');
+            if (!calendarContent || !grid) return;
+            let startX = 0; let currentX = 0; let isDragging = false;
+            const actualDate = new Date(); const actualMonth = actualDate.getMonth(); const actualYear = actualDate.getFullYear();
+            const onStart = (e) => { isDragging = true; startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX; grid.style.transition = 'none'; };
+            const onMove = (e) => {
+                if (!isDragging) return;
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const deltaX = clientX - startX;
+                let canSwipeRight = !(currentYear === actualYear && currentMonth === actualMonth);
+                let canSwipeLeft = !(currentYear === actualYear && currentMonth === 11);
+                if ((deltaX > 0 && !canSwipeRight) || (deltaX < 0 && !canSwipeLeft)) { grid.style.transform = 'translateX(0)'; currentX = 0; return; }
+                currentX = deltaX; grid.style.transform = `translateX(${deltaX}px)`;
+            };
+            const onEnd = () => {
+                if (!isDragging) return; isDragging = false;
+                if (currentX < -80) changeMonth(1);
+                else if (currentX > 80) changeMonth(-1);
+                else { grid.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'; grid.style.transform = 'translateX(0)'; }
+                currentX = 0;
+            };
+            calendarContent.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+            calendarContent.addEventListener('touchstart', onStart, { passive: true });
+            window.addEventListener('touchmove', onMove, { passive: true });
+            window.addEventListener('touchend', onEnd);
+        }
     </script>
 </body>
 </html>
